@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Simple NER Annotator — JSONL Export</title>
+<style>
+  :root{
+    --ui-bg:#0f1724;
+    --card:#0b1220;
+    --muted:#94a3b8;
+    --accent:#7c3aed;
+    --glass: rgba(255,255,255,0.03);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  body{
+    margin:0;
+    background: linear-gradient(180deg,#071022 0%, #071a2a 100%);
+    color:#e6eef8;
+    min-height:100vh;
+    display:flex;
+    gap:18px;
+    padding:20px;
+    box-sizing:border-box;
+  }
+  .panel{
+    background:var(--card);
+    border-radius:10px;
+    padding:14px;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+    width:420px;
+    max-height: calc(100vh - 40px);
+    overflow:auto;
+  }
+  .main{
+    flex:1;
+    min-width:0;
+    max-height: calc(100vh - 40px);
+    overflow:auto;
+  }
+  h2{margin:6px 0 12px 0;font-size:16px;color:#fff}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  textarea,input[type="text"]{
+    width:100%;
+    font-size:14px;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.04);
+    background:var(--glass);
+    color:inherit;
+  }
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  button.btn{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);
+    padding:8px 10px;border-radius:8px;color:inherit;cursor:pointer;
+  }
+  .doc-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .doc-item{display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px}
+  .render{
+    padding:18px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+    margin-bottom:12px;white-space:pre-wrap;line-height:1.45;font-size:15px;
+    position:relative;
+  }
+  .label-btn{border:none;padding:6px 8px;border-radius:8px;color:#071022;cursor:pointer;font-weight:600}
+  .palette{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px 0}
+  .annotations-list{background:rgba(0,0,0,0.12);padding:10px;border-radius:8px;margin-top:8px}
+  .ann-row{display:flex;justify-content:space-between;align-items:center;padding:6px 4px}
+  .small{font-size:13px;color:var(--muted)}
+  .help{font-size:13px;color:var(--muted);margin-top:8px}
+  .topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .controls{display:flex;gap:8px;align-items:center}
+  .kbd{background:rgba(0,0,0,0.16);padding:4px 8px;border-radius:6px;font-weight:700}
+  .doc-title{font-weight:700;margin-bottom:6px}
+  .export-area{display:flex;gap:8px;align-items:center}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .entity { padding:2px 6px;border-radius:4px;color:#071022; font-weight:700; }
+  .label-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .empty{color:var(--muted);font-size:14px}
+  .footer{font-size:13px;color:var(--muted);margin-top:16px}
+</style>
+</head>
+<body>
+
+<div class="panel" style="width:360px">
+  <div class="topbar">
+    <h2>Simple NER Annotator</h2>
+    <div class="small">JSONL export</div>
+  </div>
+
+  <label>Paste documents (one per line)</label>
+  <textarea id="docsInput" rows="6" placeholder="Each line becomes a document. Paste long documents — they will be kept intact."></textarea>
+  <div class="row" style="margin-top:8px">
+    <button id="loadDocs" class="btn">Load Documents</button>
+    <button id="clearDocs" class="btn">Clear</button>
+  </div>
+
+  <label style="margin-top:10px">Labels (comma separated)</label>
+  <input id="labelsInput" placeholder="PERSON,ORG,GPE" />
+  <div class="row" style="margin-top:8px">
+    <button id="setLabels" class="btn">Create Labels</button>
+    <button id="clearLabels" class="btn">Reset</button>
+  </div>
+
+  <div id="labelsArea" style="margin-top:10px"></div>
+
+  <h2 style="margin-top:14px">Documents</h2>
+  <div id="docsList" class="doc-list">
+    <div class="empty">No documents loaded</div>
+  </div>
+
+  <div style="margin-top:12px">
+    <div class="small">Quick keys: Press number keys 1.. to apply labels in order. Press <span class="kbd">Del</span> to remove selected annotation in list.</div>
+  </div>
+
+  <div class="footer">Built for quick export — no server. Works locally in browser.</div>
+</div>
+
+<div class="main panel">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="doc-title" id="currentTitle">No document selected</div>
+      <div class="small" id="docCount">0 documents</div>
+    </div>
+
+    <div class="controls">
+      <div class="export-area">
+        <button id="prevDoc" class="btn">◀ Prev</button>
+        <button id="nextDoc" class="btn">Next ▶</button>
+        <button id="exportJsonl" class="btn">Export JSONL</button>
+        <button id="downloadJsonl" class="btn">Download .jsonl</button>
+      </div>
+    </div>
+  </div>
+
+  <label>Document view — select text and click a label to annotate</label>
+  <div id="renderContainer" class="render" tabindex="0" aria-label="Document render area">
+    <div class="empty">No document to render</div>
+  </div>
+
+  <div id="legend" class="label-legend"></div>
+
+  <div>
+    <h2 style="margin-top:12px">Annotations</h2>
+    <div id="annotations" class="annotations-list">
+      <div class="empty">No annotations</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Simple NER annotator (single-file)
+   - Documents are stored as array of objects: {text, annotations: [{start,end,label}]}
+   - Exports JSONL with "text" and "labels" arrays as doccano: [[start,end,label], ...]
+   - Prevents overlapping spans (simple)
+*/
+(() => {
+  // state
+  let docs = [];
+  let labels = []; // [{name,color}]
+  let currentIndex = -1;
+
+  // elements
+  const docsInput = document.getElementById('docsInput');
+  const loadDocs = document.getElementById('loadDocs');
+  const clearDocs = document.getElementById('clearDocs');
+  const labelsInput = document.getElementById('labelsInput');
+  const setLabels = document.getElementById('setLabels');
+  const clearLabels = document.getElementById('clearLabels');
+  const docsList = document.getElementById('docsList');
+  const renderContainer = document.getElementById('renderContainer');
+  const labelsArea = document.getElementById('labelsArea');
+  const annotationsDiv = document.getElementById('annotations');
+  const currentTitle = document.getElementById('currentTitle');
+  const docCount = document.getElementById('docCount');
+  const prevDoc = document.getElementById('prevDoc');
+  const nextDoc = document.getElementById('nextDoc');
+  const exportJsonl = document.getElementById('exportJsonl');
+  const downloadJsonl = document.getElementById('downloadJsonl');
+  const legend = document.getElementById('legend');
+
+  // utility: color palette
+  const COLORS = ["#FDE68A","#FDBA74","#FB7185","#C7B2FF","#86EFAC","#60A5FA","#FCA5A5","#FDE68A","#A7F3D0","#FCE7F3","#C4B5FD"];
+
+  function makeDocsFromInput() {
+    const raw = docsInput.value.split(/\r?\n/).map(s=>s.trim()).filter(s=>s.length>0);
+    docs = raw.map(t => ({ text: t, annotations: [] }));
+    currentIndex = docs.length ? 0 : -1;
+    renderDocsList();
+    renderCurrent();
+  }
+
+  function renderDocsList(){
+    docsList.innerHTML = "";
+    if(!docs.length){
+      docsList.innerHTML = '<div class="empty">No documents loaded</div>';
+      docCount.textContent = "0 documents";
+      currentTitle.textContent = "No document selected";
+      return;
+    }
+    docCount.textContent = docs.length + " document(s)";
+    docs.forEach((d,i)=>{
+      const el = document.createElement('div');
+      el.className = 'doc-item';
+      el.innerHTML = `
+        <div style="flex:1"><strong>#${i+1}</strong> — <span style="color:var(--muted);font-size:13px">${shorten(d.text,70)}</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn" data-idx="${i}">Open</button>
+          <button class="btn" data-del="${i}">Del</button>
+        </div>`;
+      docsList.appendChild(el);
+    });
+    // attach handlers
+    docsList.querySelectorAll('[data-idx]').forEach(b=>{
+      b.addEventListener('click', e=>{
+        currentIndex = parseInt(b.getAttribute('data-idx'),10);
+        renderCurrent();
+      });
+    });
+    docsList.querySelectorAll('[data-del]').forEach(b=>{
+      b.addEventListener('click', e=>{
+        const idx = parseInt(b.getAttribute('data-del'),10);
+        if(!confirm('Delete document #' + (idx+1) + '?')) return;
+        docs.splice(idx,1);
+        if(currentIndex >= docs.length) currentIndex = docs.length-1;
+        renderDocsList();
+        renderCurrent();
+      });
+    });
+  }
+
+  function shorten(s,n){ return s.length>n ? s.slice(0,n-1)+"…" : s; }
+
+  function setLabelPaletteFromInput(){
+    const raw = labelsInput.value.trim();
+    if(!raw) return alert('Enter label names, comma separated (e.g. PERSON,ORG)');
+    labels = raw.split(',').map(s=>s.trim()).filter(Boolean).map((name,i)=>({name, color: COLORS[i % COLORS.length]}));
+    renderLabelsArea();
+    renderLegend();
+  }
+
+  function renderLabelsArea(){
+    labelsArea.innerHTML = '';
+    if(!labels.length) { labelsArea.innerHTML = '<div class="small">No labels created</div>'; return }
+    const p = document.createElement('div');
+    p.className = 'palette';
+    labels.forEach((lab,i)=>{
+      const btn = document.createElement('button');
+      btn.className = 'label-btn';
+      btn.style.background = lab.color;
+      btn.textContent = (i+1) + ' · ' + lab.name;
+      btn.title = `Label ${lab.name} (press ${i+1})`;
+      btn.addEventListener('click', ()=> applyLabelToSelection(lab.name));
+      p.appendChild(btn);
+    });
+    labelsArea.appendChild(p);
+  }
+
+  function renderLegend(){
+    legend.innerHTML = '';
+    if(!labels.length) return;
+    labels.forEach(l=>{
+      const sp = document.createElement('span');
+      sp.className = 'entity';
+      sp.style.background = l.color;
+      sp.style.marginRight = '6px';
+      sp.textContent = l.name;
+      legend.appendChild(sp);
+    });
+  }
+
+  function renderCurrent(){
+    // document area render with spans
+    annotationsDiv.innerHTML = '';
+    renderContainer.innerHTML = '';
+    if(currentIndex < 0 || currentIndex >= docs.length){
+      currentTitle.textContent = "No document selected";
+      renderContainer.innerHTML = '<div class="empty">No document to render</div>';
+      annotationsDiv.innerHTML = '<div class="empty">No annotations</div>';
+      return;
+    }
+    const doc = docs[currentIndex];
+    currentTitle.textContent = `Document #${currentIndex+1}`;
+    // render annotated html by slicing text
+    const html = renderTextWithAnnotations(doc.text, doc.annotations);
+    renderContainer.innerHTML = html;
+    renderContainer.focus();
+    renderAnnotationsList();
+    renderDocsList(); // update preview
+  }
+
+  function renderTextWithAnnotations(text, anns){
+    if(!anns || !anns.length) return escapeHtml(text);
+    // sort annotations by start
+    const sorted = anns.slice().sort((a,b)=>a.start - b.start);
+    // build
+    let out = '';
+    let cursor = 0;
+    for(const a of sorted){
+      if(a.start < cursor) continue; // skip overlapping earlier / invalid
+      out += escapeHtml(text.slice(cursor, a.start));
+      const labelObj = labels.find(l=>l.name===a.label) || {color:'#ddd'};
+      const content = escapeHtml(text.slice(a.start, a.end));
+      out += `<span class="entity" style="background:${labelObj.color}">${content}<span style="font-size:11px;color:rgba(0,0,0,0.6);margin-left:6px"> ${a.label}</span></span>`;
+      cursor = a.end;
+    }
+    out += escapeHtml(text.slice(cursor));
+    return out;
+  }
+
+  function renderAnnotationsList(){
+    annotationsDiv.innerHTML = '';
+    if(currentIndex < 0 || currentIndex >= docs.length){
+      annotationsDiv.innerHTML = '<div class="empty">No annotations</div>';
+      return;
+    }
+    const doc = docs[currentIndex];
+    if(!doc.annotations.length) { annotationsDiv.innerHTML = '<div class="empty">No annotations</div>'; return }
+    doc.annotations.forEach((a,idx)=>{
+      const row = document.createElement('div');
+      row.className = 'ann-row';
+      row.innerHTML = `<div><strong>${a.label}</strong> — <span class="small">[${a.start},${a.end})</span> — <span class="small">${escapeHtml(doc.text.slice(a.start,a.end))}</span></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" data-edit="${idx}">Edit</button>
+          <button class="btn" data-del="${idx}">Delete</button>
+        </div>`;
+      annotationsDiv.appendChild(row);
+    });
+    annotationsDiv.querySelectorAll('[data-del]').forEach(b=>{
+      b.addEventListener('click', e=>{
+        const idx = parseInt(b.getAttribute('data-del'),10);
+        docs[currentIndex].annotations.splice(idx,1);
+        renderCurrent();
+      });
+    });
+    annotationsDiv.querySelectorAll('[data-edit]').forEach(b=>{
+      b.addEventListener('click', e=>{
+        const idx = parseInt(b.getAttribute('data-edit'),10);
+        const a = docs[currentIndex].annotations[idx];
+        const newLabel = prompt('Change label for selected span', a.label);
+        if(newLabel) { a.label = newLabel; renderCurrent(); }
+      });
+    });
+  }
+
+  // selection helpers (compute character offsets relative to container text)
+  function getSelectionOffsets(container){
+    const sel = window.getSelection();
+    if(!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
+    const range = sel.getRangeAt(0);
+    // Ensure selection is inside container
+    if(!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
+    // create pre-range to measure start offset
+    const pre = document.createRange();
+    pre.selectNodeContents(container);
+    pre.setEnd(range.startContainer, range.startOffset);
+    const start = pre.toString().length;
+    const pre2 = document.createRange();
+    pre2.selectNodeContents(container);
+    pre2.setEnd(range.endContainer, range.endOffset);
+    const end = pre2.toString().length;
+    return {start, end};
+  }
+
+  function applyLabelToSelection(labelName){
+    if(currentIndex < 0 || currentIndex >= docs.length) { alert('Open a document first'); return }
+    const container = renderContainer;
+    const offsets = getSelectionOffsets(container);
+    if(!offsets) { alert('Select text inside the document view'); return }
+    const doc = docs[currentIndex];
+    // But the offset counts rendered text including the label annotations text due to HTML nodes — we should compute against the raw text string.
+    // The trick: container.textContent equals the raw text with annotations removed; so offsets relative to container.textContent are correct.
+    const raw = container.textContent || '';
+    // ensure offsets are within raw length
+    let {start,end} = offsets;
+    start = Math.max(0, Math.min(start, raw.length));
+    end = Math.max(0, Math.min(end, raw.length));
+    if(start === end) return alert('Zero-length selection');
+    // check overlap with existing annotations
+    for(const a of doc.annotations){
+      if(!(end <= a.start || start >= a.end)){
+        return alert('Overlapping with existing annotation. Delete conflicting annotation first.');
+      }
+    }
+    doc.annotations.push({start, end, label: labelName});
+    // sort for consistent rendering
+    doc.annotations.sort((x,y)=>x.start - y.start);
+    // clear selection
+    window.getSelection().removeAllRanges();
+    renderCurrent();
+  }
+
+  // basic non-overlap check utility (not used here but handy)
+  function overlaps(range, anns){
+    for(const a of anns) if(!(range.end <= a.start || range.start >= a.end)) return true;
+    return false;
+  }
+
+  // escape html
+  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // export JSONL
+  function buildJsonl(){
+    const lines = docs.map(d => {
+      const labelsArr = (d.annotations || []).map(a => [a.start, a.end, a.label]);
+      // ensure JSON safe text
+      return JSON.stringify({ text: d.text, labels: labelsArr });
+    });
+    return lines.join("\\n");
+  }
+
+  function triggerDownload(filename, content){
+    const blob = new Blob([content], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 5000);
+  }
+
+  // Event wiring
+  loadDocs.addEventListener('click', ()=>{ makeDocsFromInput(); });
+  clearDocs.addEventListener('click', ()=>{ docsInput.value=''; docs=[]; currentIndex=-1; renderDocsList(); renderCurrent(); });
+  setLabels.addEventListener('click', ()=>{ setLabelPaletteFromInput(); });
+  clearLabels.addEventListener('click', ()=>{ labelsInput.value=''; labels=[]; renderLabelsArea(); renderLegend(); });
+
+  prevDoc.addEventListener('click', ()=>{ if(docs.length){ currentIndex = Math.max(0, currentIndex-1); renderCurrent(); }});
+  nextDoc.addEventListener('click', ()=>{ if(docs.length){ currentIndex = Math.min(docs.length-1, currentIndex+1); renderCurrent(); }});
+
+  exportJsonl.addEventListener('click', ()=>{
+    const preview = buildJsonl();
+    // show in a new window
+    const w = window.open('', '_blank');
+    w.document.write('<pre style="white-space:pre-wrap;font-family:monospace;padding:10px;background:#0b1220;color:#e6eef8;">'+escapeHtml(preview)+'</pre>');
+  });
+
+  downloadJsonl.addEventListener('click', ()=>{
+    const content = buildJsonl();
+    triggerDownload('annotations.jsonl', content);
+  });
+
+  // handle selection apply via keyboard (numbers) & global keyboard
+  document.addEventListener('keydown', (e)=>{
+    // number keys 1..9 (top row)
+    if(e.key >= '1' && e.key <= String(Math.min(9, labels.length))){
+      const idx = parseInt(e.key,10)-1;
+      const lab = labels[idx];
+      if(lab) applyLabelToSelection(lab.name);
+    }
+    // delete selected ann in list (if focus in main and there are anns)
+    if(e.key === 'Delete'){
+      // attempt to delete last annotation in current doc
+      if(currentIndex >= 0 && docs[currentIndex] && docs[currentIndex].annotations.length){
+        const idx = docs[currentIndex].annotations.length - 1;
+        if(confirm('Delete last annotation?')) {
+          docs[currentIndex].annotations.splice(idx,1);
+          renderCurrent();
+        }
+      }
+    }
+  });
+
+  // prevent selecting the label tags themselves from interfering — selection only in rendered container
+  renderContainer.addEventListener('mouseup', (e)=>{
+    // do nothing; user will click label button to assign
+  });
+
+  // helper: clicking outside clears selection
+  document.body.addEventListener('click', (e)=>{
+    // allow normal clicks
+  });
+
+  // Initialize a helpful example
+  const exampleText = [
+    "Barack Obama visited New Delhi in 2015.",
+    "OpenAI released GPT-4 in 2023."
+  ];
+  docsInput.value = exampleText.join("\\n");
+  labelsInput.value = "PERSON,ORG,GPE,DATE";
+  // auto-load to speed up first run
+  makeDocsFromInput();
+  setLabelPaletteFromInput();
+})();
+</script>
+</body>
+</html>
