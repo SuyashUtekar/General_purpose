@@ -1,0 +1,276 @@
+SQL Tables (Structured Data)
+
+6 tables — cover the core banking supervision workflow
+
+Table 1 — bank_entities
+Master registry of all banks RBI supervises.
+
+CREATE TABLE bank_entities (
+  bank_id         VARCHAR(10) PRIMARY KEY,  -- e.g. BNK-001
+  bank_name       VARCHAR(100),             -- "Punjab National Bank"
+  bank_type       VARCHAR(30),              -- PSB / PVT / RRB / UCB / NBFC
+  hq_city         VARCHAR(50),
+  total_assets_cr DECIMAL(14,2),
+  license_status  VARCHAR(20),              -- ACTIVE / WATCH / SUSPENDED
+  rbi_zone        VARCHAR(20),              -- North / South / East / West
+  registered_on   DATE
+);
+
+
+Dummy rows to create: 25 banks — mix of PSBs (SBI, PNB), private (HDFC, ICICI), RRBs, 3 UCBs, 2 NBFCs
+
+Table 2 — npa_accounts
+Core NPA monitoring — most used by DEPT_RISK.
+
+CREATE TABLE npa_accounts (
+  account_id        VARCHAR(15) PRIMARY KEY,
+  bank_id           VARCHAR(10) REFERENCES bank_entities,
+  borrower_name     VARCHAR(100),
+  borrower_type     VARCHAR(20),   -- INDIVIDUAL / MSME / CORPORATE
+  loan_type         VARCHAR(30),   -- HOME / AGRI / CORPORATE / MSME
+  sanctioned_amt_cr DECIMAL(10,2),
+  outstanding_amt_cr DECIMAL(10,2),
+  dpd               INTEGER,       -- Days Past Due
+  npa_category      VARCHAR(20),   -- SUB_STANDARD / DOUBTFUL_1 / DOUBTFUL_2 / LOSS
+  classification_date DATE,
+  provisioning_pct  DECIMAL(5,2),  -- 15 / 25 / 40 / 100
+  city              VARCHAR(50),
+  sector            VARCHAR(40)    -- INFRASTRUCTURE / REAL_ESTATE / AGRI / TEXTILE
+);
+
+Dummy rows: 200 accounts — spread across banks, sectors, NPA categories
+
+Table 3 — fraud_reports
+Filed by banks under FMRS (Fraud Monitoring Return System).
+
+CREATE TABLE fraud_reports (
+  fraud_id        VARCHAR(15) PRIMARY KEY,
+  bank_id         VARCHAR(10) REFERENCES bank_entities,
+  account_id      VARCHAR(15),
+  fraud_type      VARCHAR(40),  -- DIVERSION / KYC_FRAUD / CYBER / INCOME_INFLATION
+  amount_cr       DECIMAL(10,2),
+  detected_date   DATE,
+  reported_date   DATE,
+  reporting_delay_days INTEGER,
+  fir_filed       BOOLEAN,
+  recovery_amt_cr DECIMAL(10,2),
+  status          VARCHAR(20),  -- UNDER_INVESTIGATION / CLOSED / ESCALATED
+  sarfaesi_applied BOOLEAN
+);
+
+
+Dummy rows: 80 fraud cases — include 10 with reporting_delay > 21 days (RBI violation trigger)
+
+Table 4 — bank_inspection_reports
+Annual Financial Inspection (AFI) results.
+
+CREATE TABLE bank_inspection_reports (
+  inspection_id   VARCHAR(15) PRIMARY KEY,
+  bank_id         VARCHAR(10) REFERENCES bank_entities,
+  inspection_year INTEGER,
+  inspection_type VARCHAR(20),   -- AFI / SPECIAL / THEMATIC
+  camels_rating   INTEGER,       -- 1-5 (1=best)
+  capital_score   INTEGER,
+  asset_score     INTEGER,
+  mgmt_score      INTEGER,
+  earnings_score  INTEGER,
+  liquidity_score INTEGER,
+  systems_score   INTEGER,
+  major_findings  TEXT,
+  corrective_action_required BOOLEAN,
+  next_inspection_due DATE
+);
+
+
+Dummy rows: 40 inspection records — include 5 banks with CAMELS rating 4-5 for drama
+
+Table 5 — penalty_orders
+Penalties imposed by RBI on banks — DEPT_COMPLY bread and butter.
+
+CREATE TABLE penalty_orders (
+  penalty_id      VARCHAR(15) PRIMARY KEY,
+  bank_id         VARCHAR(10) REFERENCES bank_entities,
+  penalty_date    DATE,
+  violation_type  VARCHAR(60),  -- KYC_NON_COMPLIANCE / FRAUD_DELAY / CAPITAL_BREACH
+  penalty_amt_lakh DECIMAL(8,2),
+  rbi_circular_ref VARCHAR(30), -- e.g. RBI/2023-24/85
+  compliance_deadline DATE,
+  complied        BOOLEAN,
+  remarks         TEXT
+);
+
+
+Dummy rows: 50 penalties — include 8 uncomplied ones for escalation scenarios
+
+Table 6 — digital_payment_metrics
+For DEPT_FINTECH — UPI, NEFT, RTGS volumes.
+
+CREATE TABLE digital_payment_metrics (
+  metric_id       SERIAL PRIMARY KEY,
+  bank_id         VARCHAR(10) REFERENCES bank_entities,
+  month           DATE,          -- first day of month
+  upi_txn_count   BIGINT,
+  upi_txn_val_cr  DECIMAL(14,2),
+  neft_txn_count  BIGINT,
+  rtgs_txn_val_cr DECIMAL(14,2),
+  failed_txn_pct  DECIMAL(5,2),
+  system_uptime_pct DECIMAL(5,2),
+  cyber_incidents INTEGER
+);
+
+
+Dummy rows: 25 banks × 12 months = 300 rows
+
+NoSQL Collections (MongoDB)
+
+3 collections — flexible, event-driven data
+
+Collection 1 — bank_complaints
+Public complaints escalated to RBI from BCSBI/CMS portal.
+
+{
+  "_id": "CMP-2024-00341",
+  "bank_id": "BNK-004",
+  "bank_name": "City Union Bank",
+  "complainant_type": "INDIVIDUAL",
+  "complaint_category": "UNAUTHORISED_TRANSACTION",
+  "complaint_subcategory": "UPI_FRAUD",
+  "amount_disputed_lakh": 2.5,
+  "complaint_date": "2024-08-14",
+  "status": "OPEN",
+  "escalation_level": 2,
+  "rbi_intervention_required": true,
+  "resolution_deadline": "2024-09-14",
+  "complaint_text": "Unauthorised UPI transfer of ₹2.5L from my account on 12-Aug-2024...",
+  "prior_bank_response": "Bank denied liability citing OTP sharing",
+  "city": "Chennai",
+  "tags": ["upi", "fraud", "escalated"]
+}
+
+
+Dummy documents: 150 complaints — mix of UPI fraud, loan mis-selling, KYC harassment, ATM disputes
+
+Collection 2 — supervisory_alerts
+Real-time alerts generated from bank data submissions — Early Warning System (EWS)
+
+{
+  "_id": "ALERT-2024-1821",
+  "alert_type": "NPA_SPIKE",
+  "severity": "HIGH",
+  "bank_id": "BNK-012",
+  "bank_name": "Deccan Urban Co-operative Bank",
+  "triggered_on": "2024-11-03T09:15:00Z",
+  "trigger_metric": "gross_npa_pct",
+  "trigger_value": 18.4,
+  "threshold": 10.0,
+  "recommended_action": "Initiate special inspection",
+  "assigned_dept": "DEPT_RISK",
+  "status": "PENDING_REVIEW",
+  "auto_escalate_by": "2024-11-10T00:00:00Z",
+  "supporting_data": {
+    "prev_quarter_npa_pct": 11.2,
+    "qoq_change_pct": 64.3,
+    "top_defaulting_sectors": ["real_estate", "msme"]
+  }
+}
+
+Dummy documents: 100 alerts — NPA spikes, fraud report delays, capital adequacy breaches, cyber incidents
+
+Collection 3 — bank_returns_submissions
+Banks submit periodic returns (BSR, DSB, FMR) — track submission compliance.
+
+{
+  "_id": "RET-2024-PNB-BSR-Q3",
+  "bank_id": "BNK-002",
+  "bank_name": "Punjab National Bank",
+  "return_type": "BSR",
+  "return_description": "Basic Statistical Return — Credit",
+  "period": "Q3-2024",
+  "due_date": "2024-10-15",
+  "submitted_date": "2024-10-22",
+  "submission_delay_days": 7,
+  "status": "LATE_SUBMITTED",
+  "penalty_applicable": true,
+  "data_quality_score": 87,
+  "remarks": "Delay attributed to system migration at bank end"
+}
+
+
+Dummy documents: 120 return records — mix of ON_TIME, LATE, PENDING, REJECTED
+
+Vector DB Documents (PDF Corpus)
+
+5 document categories — what RBI officers actually read
+
+Category 1 — RBI Circulars & Master Directions
+15 documents
+
+RBI_MD_KYC_2016_Updated2024.pdf       — Master Direction on KYC
+RBI_MD_FraudClassification_2024.pdf   — Fraud classification & reporting
+RBI_Circular_IRACP_2023.pdf           — Income Recognition & NPA norms
+RBI_Circular_DigitalLending_2022.pdf  — Digital lending guidelines
+RBI_MD_NBFC_Regulations_2023.pdf      — NBFC regulatory framework
+RBI_Circular_CyberSecurity_2023.pdf   — IT & cyber security directions
+RBI_Circular_UPI_Interoperability.pdf — UPI framework
+... (8 more)
+
+
+Category 2 — Annual Financial Inspection (AFI) Reports
+10 documents (one per major bank)
+
+AFI_Report_BNK001_SBI_2023.pdf
+AFI_Report_BNK004_CUB_2023.pdf
+AFI_Report_BNK012_DeccanUCB_2023.pdf
+... (7 more)
+
+Each contains: CAMELS narrative, key findings, management response, corrective action plan.
+
+Category 3 — FATF / Basel III Reference Documents
+5 documents
+
+Basel3_CapitalAdequacy_Framework.pdf
+FATF_Recommendations_AML_2023.pdf
+BIS_LiquidityRisk_Guidelines.pdf
+FSB_ResolutionFramework.pdf
+RBI_IndAS_Implementation_Guide.pdf
+
+
+Category 4 — Bank-Submitted Investigation Reports
+20 documents
+FraudInvestigation_BNK002_FRAUD2024081.pdf
+FraudInvestigation_BNK007_FRAUD2024034.pdf
+LegalOpinion_SARFAESI_BNK004_2024.pdf
+... (17 more)
+
+
+Category 5 — Internal RBI Policy Notes
+8 documents
+
+RBI_InternalPolicy_EWS_Framework.pdf
+RBI_SOP_SpecialInspection.pdf
+RBI_Thematic_MSME_Lending_2024.pdf
+RBI_Note_CoopBankSupervision.pdf
+... (4 more)
+
+Department → Data Source Access Map
+
+Ties everything together — what each dept can actually query:
+
+
+
+Sample Queries Each Dept Would Demo
+
+These are your judge-facing demo queries — one killer query per department:
+
+DEPT_RISK → “Which banks have gross NPA above 10% and also received a CAMELS rating of 4 or 5 in their last inspection?”
+
+DEPT_FRAUD → “List all fraud cases where reporting delay exceeded 21 days and SARFAESI has not been applied yet.”
+
+DEPT_COMPLY → “Which banks have uncomplied penalty orders older than 90 days — show violation type and amount.”
+
+DEPT_FINTECH → “Which banks had UPI failed transaction rate above 2% for 3 consecutive months?”
+
+DEPT_EXEC → “Give me a risk summary — banks with NPA spike alerts, pending penalties, and active fraud investigations simultaneously.” ← This one hits all 3 sources, perfect multi-hop demo.
+
+
+
