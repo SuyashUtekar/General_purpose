@@ -1,0 +1,23 @@
+One Missing FK You Should Add
+
+Right now penalty_orders references a rbi_circular_ref as just a text field like "RBI/2023-24/85". You should make this a proper FK:
+
+-- New table
+CREATE TABLE rbi_circulars_registry (
+  circular_ref    VARCHAR(30) PRIMARY KEY,  -- RBI/2023-24/85
+  circular_title  VARCHAR(200),
+  issued_date     DATE,
+  department      VARCHAR(50),
+  subject         VARCHAR(200)
+);
+
+-- Then in penalty_orders
+ALTER TABLE penalty_orders
+  ADD CONSTRAINT fk_circular
+  FOREIGN KEY (rbi_circular_ref)
+  REFERENCES rbi_circulars_registry(circular_ref);
+
+
+This also gives you a bonus benefit — your vector DB documents (RBI circulars PDFs) and this SQL table can now be cross-referenced by circular_ref. The agent can pull structured penalty data AND the full circular PDF text for the same reference.
+
+
