@@ -1,0 +1,410 @@
+Golden Rules Before Anything
+
+Rule 1 — Use Real Bank Names & Codes
+Don’t use “Bank A”, “Bank B”. Use actual RBI-supervised banks:
+
+BNK-001 → State Bank of India          (PSB)
+BNK-002 → Punjab National Bank         (PSB)
+BNK-003 → Bank of Baroda               (PSB)
+BNK-004 → HDFC Bank                    (PVT)
+BNK-005 → ICICI Bank                   (PVT)
+BNK-006 → Axis Bank                    (PVT)
+BNK-007 → Kotak Mahindra Bank          (PVT)
+BNK-008 → Yes Bank                     (PVT — recovery story, good for drama)
+BNK-009 → Punjab & Maharashtra UCB     (UCB — actually failed, great for demo)
+BNK-010 → Deccan Urban Co-op Bank      (UCB)
+BNK-011 → Muthoot Finance              (NBFC)
+BNK-012 → Bajaj Finance                (NBFC)
+BNK-013 → Canara Bank                  (PSB)
+BNK-014 → Union Bank of India          (PSB)
+BNK-015 → IndusInd Bank                (PVT)
+
+Rule 2 — Use Real RBI Circular Numbers
+
+RBI/2023-24/85   → KYC Master Direction update
+RBI/2023-24/53   → IRACP Norms
+RBI/2022-23/178  → Digital Lending Guidelines
+RBI/2024-25/12   → Cyber Security Framework
+
+Rule 3 — Amounts Must Be Sector-Realistic
+A textile MSME loan won’t be ₹500 Cr. An infrastructure corporate loan won’t be ₹2L. Use these ranges:
+
+INDIVIDUAL  / HOME LOAN     →  ₹ 0.15 Cr  –  ₹ 1.5 Cr
+MSME        / WORKING CAP   →  ₹ 0.5 Cr   –  ₹ 25 Cr
+CORPORATE   / INFRA         →  ₹ 50 Cr    –  ₹ 800 Cr
+AGRI        / KISAN         →  ₹ 0.02 Cr  –  ₹ 0.5 Cr
+NBFC        / ON-LENDING    →  ₹ 10 Cr    –  ₹ 200 Cr
+
+
+Rule 4 — Build Correlated Stories Across Tables
+This is the most important rule. A bank that appears in fraud_reports should also show a CAMELS rating of 4-5 in bank_inspection_reports and have a supervisory_alert in MongoDB. Judges will cross-check — and when data tells a consistent story, it looks real.
+
+
+Table-by-Table Insertion Strategy
+
+bank_entities — 15 rows
+
+Keep total_assets_cr close to real published figures:
+
+banks = [
+  ("BNK-001", "State Bank of India",       "PSB",  "Mumbai",  5800000, "ACTIVE", "West"),
+  ("BNK-002", "Punjab National Bank",      "PSB",  "Delhi",   1450000, "ACTIVE", "North"),
+  ("BNK-003", "Bank of Baroda",            "PSB",  "Vadodara", 1280000, "ACTIVE", "West"),
+  ("BNK-004", "HDFC Bank",                 "PVT",  "Mumbai",  2800000, "ACTIVE", "West"),
+  ("BNK-005", "ICICI Bank",                "PVT",  "Mumbai",  2100000, "ACTIVE", "West"),
+  ("BNK-006", "Axis Bank",                 "PVT",  "Mumbai",   980000, "ACTIVE", "West"),
+  ("BNK-007", "Kotak Mahindra Bank",       "PVT",  "Mumbai",   720000, "ACTIVE", "West"),
+  ("BNK-008", "Yes Bank",                  "PVT",  "Mumbai",   380000, "WATCH",  "West"),
+  ("BNK-009", "Punjab & Maharashtra UCB",  "UCB",  "Mumbai",    12000, "SUSPENDED","West"),
+  ("BNK-010", "Deccan Urban Co-op Bank",   "UCB",  "Pune",      8500, "WATCH",  "West"),
+  ("BNK-011", "Muthoot Finance",           "NBFC", "Kochi",   120000, "ACTIVE", "South"),
+  ("BNK-012", "Bajaj Finance",             "NBFC", "Pune",    340000, "ACTIVE", "West"),
+  ("BNK-013", "Canara Bank",               "PSB",  "Bengaluru",980000, "ACTIVE", "South"),
+  ("BNK-014", "Union Bank of India",       "PSB",  "Mumbai",   980000, "ACTIVE", "West"),
+  ("BNK-015", "IndusInd Bank",             "PVT",  "Pune",    420000, "WATCH",  "West"),
+]
+
+
+npa_accounts — 200 rows
+
+Distribution that looks real:
+
+PSBs (SBI, PNB, BoB)  → 60% of NPA accounts  (PSBs have higher NPAs historically)
+PVT banks             → 25% of NPA accounts
+UCBs                  → 10% of NPA accounts
+NBFCs                 → 5%  of NPA accounts
+
+Sector distribution:
+
+INFRASTRUCTURE   → 25%   (highest ticket size, ₹50-800 Cr)
+REAL_ESTATE      → 20%   (₹10-150 Cr)
+MSME             → 25%   (₹0.5-25 Cr)
+AGRI             → 15%   (₹0.02-0.5 Cr)
+TEXTILE          → 10%   (₹1-40 Cr)
+RETAIL/HOME      →  5%   (₹0.15-1.5 Cr)
+
+NPA category distribution — follow RBI provisioning norms:
+
+npa_categories = {
+  "SUB_STANDARD": {
+      "pct": 40,           # largest bucket
+      "dpd_range": (91, 365),
+      "provisioning": 15.0
+  },
+  "DOUBTFUL_1": {
+      "pct": 25,
+      "dpd_range": (366, 730),
+      "provisioning": 25.0
+  },
+  "DOUBTFUL_2": {
+      "pct": 20,
+      "dpd_range": (731, 1095),
+      "provisioning": 40.0
+  },
+  "LOSS": {
+      "pct": 15,           # smallest — fully provided
+      "dpd_range": (1096, 2000),
+      "provisioning": 100.0
+  }
+}
+
+Realistic borrower names by type:
+
+import random
+
+corporate_names = [
+  "Jaypee Infratech Ltd", "Videocon Industries Ltd",
+  "Bhushan Steel Ltd", "Lanco Infratech Ltd",
+  "Amtek Auto Ltd", "Era Infra Engineering Ltd"
+]
+msme_names = [
+  "Sharma Textile Mills", "Patel Construction Co",
+  "Reddy Agro Industries", "Singh Packaging Pvt Ltd"
+]
+individual_names = [
+  "Rajesh Kumar Sharma", "Priya Venkataraman",
+  "Mohammed Iqbal Khan", "Sunita Devi Yadav"
+]
+
+
+fraud_reports — 80 rows
+
+This is your most dramatic table — make it story-rich.
+
+Fraud type distribution:
+
+DIVERSION_OF_FUNDS    → 30%  (most common, large ticket)
+KYC_FRAUD             → 20%
+INCOME_INFLATION      → 20%
+CYBER_FRAUD           → 15%
+FORGED_DOCUMENTS      → 10%
+MISREPRESENTATION     →  5%
+
+
+Key realism rules:
+
+# Rule 1: Reporting delay — RBI mandates reporting within 21 days
+# Add 15 cases with delay > 21 days — these trigger penalty_orders
+
+# Rule 2: Large frauds (> ₹50 Cr) must have FIR filed = True
+# Small frauds (< ₹1 Cr) — FIR filed only 40% of the time
+
+# Rule 3: Recovery is always partial
+# recovery_amt = sanctioned_amt * random(0.02, 0.35)
+# Nobody recovers 100% — that would look fake
+
+# Rule 4: SARFAESI applied only for secured loans > ₹1 Cr
+# Link to npa_accounts where loan_type in (CORPORATE, MSME, HOME)
+
+fraud_type_amounts = {
+  "DIVERSION_OF_FUNDS": (10, 500),    # Cr
+  "KYC_FRAUD":          (0.5, 15),
+  "INCOME_INFLATION":   (1, 50),
+  "CYBER_FRAUD":        (0.01, 2),
+  "FORGED_DOCUMENTS":   (5, 80),
+  "MISREPRESENTATION":  (2, 30)
+}
+
+Build 3 “story banks” — banks with multiple connected fraud cases:
+
+BNK-008 (Yes Bank)  → 8 fraud cases, 3 with delay, CAMELS=4
+BNK-009 (PM UCB)    → 5 fraud cases, all SARFAESI, triggered suspension
+BNK-002 (PNB)       → 10 fraud cases (echoes Nirav Modi history)
+
+
+bank_inspection_reports — 40 rows
+
+CAMELS distribution — realistic for Indian banking:
+
+Rating 1 → 10%  (SBI, HDFC, ICICI — strong banks)
+Rating 2 → 35%  (Most PSBs — adequate)
+Rating 3 → 30%  (Weaker PSBs, some PVT)
+Rating 4 → 15%  (Yes Bank, UCBs — under watch)
+Rating 5 →  5%  (PM UCB — near failure)
+
+Component scores must be internally consistent:
+
+# If CAMELS overall = 4, then at least 3 components must be 4 or 5
+# Asset quality (NPA-linked) score must match npa_accounts data
+
+# Banks with high NPA → low asset_score
+# BNK-002 (PNB) has 80 NPA accounts → asset_score = 4
+# BNK-001 (SBI) has 20 NPA accounts → asset_score = 2
+
+def get_asset_score(bank_id, npa_accounts_df):
+    npa_count = npa_accounts_df[npa_accounts_df.bank_id == bank_id].shape[0]
+    if npa_count > 50:  return 5
+    if npa_count > 30:  return 4
+    if npa_count > 15:  return 3
+    if npa_count > 5:   return 2
+    return 1
+
+
+Major findings — use real RBI language:
+
+findings_templates = [
+  "Evergreening of loans detected in {n} accounts totalling ₹{amt} Cr",
+  "KYC non-compliance observed in {pct}% of new account openings",
+  "Divergence in NPA classification — ₹{amt} Cr under-reported",
+  "Concentration risk — top 10 borrowers constitute {pct}% of loan book",
+  "IT audit gaps — CBS patch update pending since {months} months",
+  "Inadequate provisioning of ₹{amt} Cr against IRACP norms"
+]
+
+penalty_orders — 50 rows
+
+Match penalties to actual violations found in inspections:
+
+# Rule: Every bank with CAMELS 4-5 must have at least 2 penalties
+# Rule: Every fraud with delay > 21 days → 1 penalty (RBI/2023-24/85)
+# Rule: 8 penalties should be complied=False (for escalation demo)
+
+violation_to_circular = {
+  "KYC_NON_COMPLIANCE":     "RBI/2023-24/85",
+  "FRAUD_REPORTING_DELAY":  "RBI/2023-24/53",
+  "CAPITAL_ADEQUACY_BREACH":"RBI/2024-25/12",
+  "NPA_DIVERGENCE":         "RBI/2023-24/53",
+  "CYBERSECURITY_GAP":      "RBI/2024-25/12",
+  "DIGITAL_LENDING_BREACH": "RBI/2022-23/178"
+}
+
+# Penalty amounts — RBI typically imposes these ranges
+penalty_ranges = {
+  "KYC_NON_COMPLIANCE":     (10, 200),   # lakh
+  "FRAUD_REPORTING_DELAY":  (50, 500),
+  "CAPITAL_ADEQUACY_BREACH":(100, 1000),
+  "NPA_DIVERGENCE":         (200, 2000),
+  "CYBERSECURITY_GAP":      (25, 100),
+  "DIGITAL_LENDING_BREACH": (10, 50)
+}
+
+
+digital_payment_metrics — 300 rows (25 banks × 12 months)
+
+Seasonal patterns make this look very real:
+
+import numpy as np
+
+def generate_upi_volume(bank_id, month):
+    base_volumes = {
+      "BNK-001": 45_000_000,   # SBI — highest UPI volume
+      "BNK-004": 38_000_000,   # HDFC
+      "BNK-005": 32_000_000,   # ICICI
+      "BNK-009": 180_000,      # UCB — much lower
+    }
+    base = base_volumes.get(bank_id, 5_000_000)
+
+    # Festival months spike — Oct, Nov (Diwali), Jan (New Year)
+    festival_months = [10, 11, 1]
+    multiplier = 1.35 if month.month in festival_months else 1.0
+
+    # Add realistic noise
+    noise = np.random.normal(1.0, 0.08)
+    return int(base * multiplier * noise)
+
+# Failed transaction % — must be < 0.5% for healthy banks
+# Cyber incidents — 0-2 for healthy, 3-8 for WATCH banks
+
+
+MongoDB — Realism Strategy
+
+bank_complaints — 150 documents
+
+Category distribution matching real BCSBI data:
+
+UNAUTHORISED_TRANSACTION  → 30%
+LOAN_MIS_SELLING          → 20%
+ATM_DISPUTE               → 15%
+KYC_HARASSMENT            → 15%
+INSURANCE_BUNDLING        → 10%
+INTEREST_RATE_DISPUTE     →  5%
+PENSION_DELAY             →  5%
+
+Complaint text templates — use real-sounding grievance language:
+
+complaint_templates = [
+  "I received an SMS alert for a UPI transaction of ₹{amt} on {date} "
+  "which I did not authorise. The bank has not responded to my "
+  "grievance filed on {date2} despite 30 days passing.",
+
+  "At the time of taking home loan from {bank}, the relationship "
+  "manager insisted on purchasing a term insurance policy of ₹{premium} "
+  "as a precondition for loan approval. This is mis-selling.",
+
+  "My ATM card was used for 3 transactions totalling ₹{amt} at a "
+  "location I was not present at. The bank is claiming the OTP "
+  "was shared which is false."
+]
+
+supervisory_alerts — 100 documents
+
+Connect alerts to SQL data — this is what makes multi-hop queries work beautifully:
+
+# NPA_SPIKE alert must match a bank that has high NPA count in npa_accounts table
+# FRAUD_DELAY alert must match fraud_reports where delay > 21 days
+# CAPITAL_BREACH must match a bank with CAMELS capital_score = 4 or 5
+
+alert_story_map = {
+  "BNK-009": ["NPA_SPIKE", "CAPITAL_BREACH", "LIQUIDITY_STRESS"],  # UCB failure story
+  "BNK-008": ["NPA_SPIKE", "FRAUD_DELAY"],                         # Yes Bank story
+  "BNK-002": ["FRAUD_DELAY", "NPA_DIVERGENCE"],                    # PNB story
+  "BNK-010": ["NPA_SPIKE", "RETURN_SUBMISSION_DELAY"],
+  "BNK-015": ["CYBERSECURITY_INCIDENT", "FRAUD_DELAY"]
+}
+
+bank_returns_submissions — 120 documents
+
+Return types RBI actually mandates:
+
+return_types = [
+  ("BSR",  "Basic Statistical Return — Credit",          "QUARTERLY"),
+  ("DSB",  "Domestic and Foreign Assets/Liabilities",    "MONTHLY"),
+  ("FMR",  "Fraud Monitoring Return",                    "QUARTERLY"),
+  ("LBS",  "Locational Banking Statistics",              "QUARTERLY"),
+  ("DCCO", "Date of Commencement of Commercial Ops",     "ANNUAL"),
+  ("SLR",  "Statutory Liquidity Ratio Compliance",       "FORTNIGHTLY"),
+]
+
+# Late submissions — PSBs submit late more often
+# UCBs have highest rejection rate (data quality issues)
+submission_profile = {
+  "PSB":  {"late_pct": 20, "rejected_pct": 5},
+  "PVT":  {"late_pct": 8,  "rejected_pct": 2},
+  "UCB":  {"late_pct": 35, "rejected_pct": 18},
+  "NBFC": {"late_pct": 15, "rejected_pct": 8}
+}
+
+
+Vector DB — Document Metadata to Embed
+
+Each PDF gets a metadata envelope so the router knows exactly when to fetch it:
+
+documents = [
+  {
+    "doc_id":    "RBI_IRACP_2023",
+    "title":     "Prudential norms on Income Recognition, Asset Classification and Provisioning",
+    "circular":  "RBI/2023-24/53",
+    "tags":      ["NPA", "IRACP", "provisioning", "sub-standard", "doubtful", "loss"],
+    "dept_relevance": ["DEPT_RISK", "DEPT_COMPLY", "DEPT_EXEC"],
+    "embed_chunks": True,
+    "chunk_size": 500
+  },
+  {
+    "doc_id":    "RBI_FRAUD_2024",
+    "title":     "Master Direction on Frauds — Classification and Reporting",
+    "circular":  "RBI/2023-24/85",
+    "tags":      ["fraud", "FMRS", "reporting", "SARFAESI", "FIR", "wilful defaulter"],
+    "dept_relevance": ["DEPT_FRAUD", "DEPT_COMPLY", "DEPT_EXEC"],
+    "embed_chunks": True,
+    "chunk_size": 400
+  }
+  # ... all 38 documents
+]
+
+
+The 3 “Story Arcs” to Build Into Your Data
+
+These are pre-built narratives that make your demo queries tell a compelling story:
+
+Story 1 — The UCB Failure Arc (BNK-009, Punjab & Maharashtra UCB)
+
+npa_accounts     → 25 NPA accounts, 8 LOSS category
+fraud_reports    → 5 cases, 4 with delay > 21 days
+inspection_report→ CAMELS = 5, all components red
+penalty_orders   → 3 penalties, all uncomplied
+supervisory_alert→ NPA_SPIKE + CAPITAL_BREACH + LIQUIDITY_STRESS
+license_status   → SUSPENDED
+
+
+Demo query: “Why was BNK-009 suspended — show complete risk trail” → hits all 3 stores
+
+Story 2 — The Large PSB Fraud Arc (BNK-002, PNB)
+
+fraud_reports    → 10 cases, ₹800 Cr total, DIVERSION dominant
+npa_accounts     → 45 accounts linked to same borrowers
+penalty_orders   → 2 penalties for fraud reporting delay
+inspection_report→ CAMELS = 3, asset_score = 4
+supervisory_alert→ FRAUD_DELAY + NPA_DIVERGENCE
+
+
+Demo query: “Show all fraud cases at PNB with reporting delays and linked NPA accounts”
+
+Story 3 — The Fintech Risk Arc (BNK-015, IndusInd)
+
+digital_payment_metrics → failed_txn_pct > 2% for 4 months
+bank_complaints         → 30 complaints, 60% UNAUTHORISED_TRANSACTION
+fraud_reports           → 8 CYBER_FRAUD cases
+penalty_orders          → 1 penalty for CYBERSECURITY_GAP
+supervisory_alert       → CYBERSECURITY_INCIDENT
+
+
+Demo query: “Which banks have rising cyber fraud and UPI failure rates simultaneously?”
+
+These 3 stories cover all 6 departments, all 3 data stores, and demonstrate multi-hop reasoning perfectly. Want me to now write the complete Python seeding script with all of this logic built in?
+
+
+
+
+
+
+
