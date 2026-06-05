@@ -1,0 +1,756 @@
+// ============================================================
+// RBI AGENTIC AI HACKATHON 2026
+// MONGODB SETUP: Collection Creation + Dummy Data Insertion
+// Collections: bank_complaints, supervisory_alerts,
+//              bank_returns_submissions
+// Run using: mongosh rbi_supervision_db < 02_nosql_setup.js
+// ============================================================
+
+use("rbi_supervision_db");
+
+// ============================================================
+// COLLECTION 1: bank_complaints
+// ============================================================
+db.createCollection("bank_complaints", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["complaint_id","bank_id","complaint_category","status","complaint_date"],
+      properties: {
+        complaint_id:       { bsonType: "string" },
+        bank_id:            { bsonType: "string" },
+        bank_name:          { bsonType: "string" },
+        complainant_type:   { enum: ["INDIVIDUAL","BUSINESS","SENIOR_CITIZEN","DIFFERENTLY_ABLED"] },
+        complaint_category: { bsonType: "string" },
+        status:             { enum: ["OPEN","RESOLVED","ESCALATED_TO_RBI","CLOSED"] },
+        amount_disputed_lakh: { bsonType: "double" },
+        escalation_level:   { bsonType: "int" }
+      }
+    }
+  }
+});
+
+db.bank_complaints.createIndex({ bank_id: 1 });
+db.bank_complaints.createIndex({ status: 1 });
+db.bank_complaints.createIndex({ complaint_category: 1 });
+db.bank_complaints.createIndex({ complaint_date: -1 });
+db.bank_complaints.createIndex({ "tags": 1 });
+
+db.bank_complaints.insertMany([
+
+  // ── YES BANK complaints (cyber + UPI heavy — Story Arc 3)
+  {
+    _id: "CMP-2024-00101",
+    complaint_id: "CMP-2024-00101",
+    bank_id: "BNK-008",
+    bank_name: "Yes Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "UNAUTHORISED_TRANSACTION",
+    complaint_subcategory: "UPI_FRAUD",
+    amount_disputed_lakh: 1.80,
+    complaint_date: new Date("2024-03-18"),
+    status: "ESCALATED_TO_RBI",
+    escalation_level: 3,
+    rbi_intervention_required: true,
+    resolution_deadline: new Date("2024-04-18"),
+    complaint_text: "On 16-March-2024, I received 4 UPI transaction alerts totalling ₹1.80 lakh from my Yes Bank account. I was asleep at the time. I have not shared OTP or credentials with anyone. Bank is refusing to refund citing OTP was shared which is categorically false.",
+    prior_bank_response: "Bank denied liability after 2 weeks, citing OTP was generated and shared from registered mobile.",
+    city: "Mumbai",
+    state: "Maharashtra",
+    customer_since_year: 2019,
+    tags: ["upi", "fraud", "unauthorised", "escalated", "cyber"],
+    created_at: new Date("2024-03-20")
+  },
+  {
+    _id: "CMP-2024-00102",
+    complaint_id: "CMP-2024-00102",
+    bank_id: "BNK-008",
+    bank_name: "Yes Bank",
+    complainant_type: "SENIOR_CITIZEN",
+    complaint_category: "UNAUTHORISED_TRANSACTION",
+    complaint_subcategory: "INTERNET_BANKING_FRAUD",
+    amount_disputed_lakh: 4.20,
+    complaint_date: new Date("2024-04-05"),
+    status: "ESCALATED_TO_RBI",
+    escalation_level: 3,
+    rbi_intervention_required: true,
+    resolution_deadline: new Date("2024-05-05"),
+    complaint_text: "I am 71 years old. My entire FD maturity amount of ₹4.20 lakh was transferred out of my account without my knowledge via net banking. I never set up net banking. I suspect bank staff involvement.",
+    prior_bank_response: "Investigation pending. No reversal made in 45 days.",
+    city: "Pune",
+    state: "Maharashtra",
+    customer_since_year: 2012,
+    tags: ["internet_banking", "fraud", "senior_citizen", "fd", "escalated"],
+    created_at: new Date("2024-04-07")
+  },
+  {
+    _id: "CMP-2024-00103",
+    complaint_id: "CMP-2024-00103",
+    bank_id: "BNK-008",
+    bank_name: "Yes Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "LOAN_MIS_SELLING",
+    complaint_subcategory: "INSURANCE_BUNDLING",
+    amount_disputed_lakh: 0.85,
+    complaint_date: new Date("2024-01-22"),
+    status: "RESOLVED",
+    escalation_level: 1,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-02-22"),
+    complaint_text: "Relationship manager insisted I purchase a life insurance policy of ₹85,000 as mandatory condition for home loan approval. This was not disclosed in sanction letter.",
+    prior_bank_response: "Bank agreed to refund premium after ombudsman intervention.",
+    city: "Thane",
+    state: "Maharashtra",
+    customer_since_year: 2021,
+    tags: ["mis_selling", "insurance", "home_loan", "resolved"],
+    created_at: new Date("2024-01-24")
+  },
+
+  // ── INDUSIND complaints (cyber heavy — Story Arc 3)
+  {
+    _id: "CMP-2024-00201",
+    complaint_id: "CMP-2024-00201",
+    bank_id: "BNK-015",
+    bank_name: "IndusInd Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "UNAUTHORISED_TRANSACTION",
+    complaint_subcategory: "UPI_FRAUD",
+    amount_disputed_lakh: 2.40,
+    complaint_date: new Date("2024-02-08"),
+    status: "ESCALATED_TO_RBI",
+    escalation_level: 3,
+    rbi_intervention_required: true,
+    resolution_deadline: new Date("2024-03-08"),
+    complaint_text: "My IndusInd UPI account was used for 6 transactions totalling ₹2.40 lakh on the night of 06-Feb-2024. I had not used my phone. Bank investigation has been pending for 60 days with no resolution.",
+    prior_bank_response: "Bank cited ongoing cyber investigation. No timeline given.",
+    city: "Pune",
+    state: "Maharashtra",
+    customer_since_year: 2020,
+    tags: ["upi", "fraud", "cyber", "escalated", "no_resolution"],
+    created_at: new Date("2024-02-10")
+  },
+  {
+    _id: "CMP-2024-00202",
+    complaint_id: "CMP-2024-00202",
+    bank_id: "BNK-015",
+    bank_name: "IndusInd Bank",
+    complainant_type: "BUSINESS",
+    complaint_category: "UNAUTHORISED_TRANSACTION",
+    complaint_subcategory: "API_FRAUD",
+    amount_disputed_lakh: 18.50,
+    complaint_date: new Date("2024-03-20"),
+    status: "ESCALATED_TO_RBI",
+    escalation_level: 3,
+    rbi_intervention_required: true,
+    resolution_deadline: new Date("2024-04-20"),
+    complaint_text: "Our business current account had ₹18.50 lakh siphoned through API calls between 2am-4am on 18-March-2024. Our payment gateway API credentials appear to have been compromised through IndusInd Bank's API portal vulnerability.",
+    prior_bank_response: "Bank denied API vulnerability — blaming third party.",
+    city: "Bengaluru",
+    state: "Karnataka",
+    customer_since_year: 2018,
+    tags: ["api_fraud", "cyber", "business", "escalated", "high_value"],
+    created_at: new Date("2024-03-22")
+  },
+  {
+    _id: "CMP-2024-00203",
+    complaint_id: "CMP-2024-00203",
+    bank_id: "BNK-015",
+    bank_name: "IndusInd Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "LOAN_MIS_SELLING",
+    complaint_subcategory: "DIGITAL_LENDING",
+    amount_disputed_lakh: 0.50,
+    complaint_date: new Date("2024-05-14"),
+    status: "OPEN",
+    escalation_level: 2,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-06-14"),
+    complaint_text: "IndusInd's digital lending partner app auto-deducted ₹50,000 from my account without sending proper sanction letter or disclosing effective interest rate upfront — violating RBI digital lending guidelines.",
+    prior_bank_response: "No response in 30 days.",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    customer_since_year: 2022,
+    tags: ["digital_lending", "mis_selling", "lsp", "rbi_circular"],
+    created_at: new Date("2024-05-15")
+  },
+
+  // ── PNB complaints
+  {
+    _id: "CMP-2024-00301",
+    complaint_id: "CMP-2024-00301",
+    bank_id: "BNK-002",
+    bank_name: "Punjab National Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "KYC_HARASSMENT",
+    complaint_subcategory: "REPEATED_KYC_REQUESTS",
+    amount_disputed_lakh: 0.00,
+    complaint_date: new Date("2024-04-10"),
+    status: "RESOLVED",
+    escalation_level: 1,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-05-10"),
+    complaint_text: "PNB branch in Ludhiana has sent me 3 KYC notices in 6 months despite completing full KYC in October 2023. Branch staff is threatening to freeze account. This amounts to harassment.",
+    prior_bank_response: "Branch accepted fault — KYC records were not updated in CBS.",
+    city: "Ludhiana",
+    state: "Punjab",
+    customer_since_year: 2010,
+    tags: ["kyc", "harassment", "cbs_error"],
+    created_at: new Date("2024-04-11")
+  },
+  {
+    _id: "CMP-2024-00302",
+    complaint_id: "CMP-2024-00302",
+    bank_id: "BNK-002",
+    bank_name: "Punjab National Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "UNAUTHORISED_TRANSACTION",
+    complaint_subcategory: "ATM_FRAUD",
+    amount_disputed_lakh: 0.95,
+    complaint_date: new Date("2024-02-28"),
+    status: "OPEN",
+    escalation_level: 2,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-03-28"),
+    complaint_text: "₹95,000 withdrawn from ATM in Delhi on 26-Feb-2024. I was in Chandigarh at the time. Police complaint filed. Bank not responding.",
+    prior_bank_response: "Chargeback raised but no credit given yet — 90 days elapsed.",
+    city: "Chandigarh",
+    state: "Punjab",
+    customer_since_year: 2015,
+    tags: ["atm", "fraud", "card_cloning", "open"],
+    created_at: new Date("2024-03-01")
+  },
+
+  // ── SBI complaints
+  {
+    _id: "CMP-2024-00401",
+    complaint_id: "CMP-2024-00401",
+    bank_id: "BNK-001",
+    bank_name: "State Bank of India",
+    complainant_type: "SENIOR_CITIZEN",
+    complaint_category: "PENSION_DELAY",
+    complaint_subcategory: "DELAY_IN_PENSION_CREDIT",
+    amount_disputed_lakh: 0.00,
+    complaint_date: new Date("2024-03-05"),
+    status: "RESOLVED",
+    escalation_level: 1,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-04-05"),
+    complaint_text: "My pension of ₹42,000 was not credited on 1st March 2024. I am 76 years old and depend on this for medicines. SBI branch staff not providing any reason.",
+    prior_bank_response: "Credited on 8th March with apology — CBS system delay.",
+    city: "Nagpur",
+    state: "Maharashtra",
+    customer_since_year: 1992,
+    tags: ["pension", "delay", "senior_citizen", "resolved"],
+    created_at: new Date("2024-03-06")
+  },
+  {
+    _id: "CMP-2024-00402",
+    complaint_id: "CMP-2024-00402",
+    bank_id: "BNK-001",
+    bank_name: "State Bank of India",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "INTEREST_RATE_DISPUTE",
+    complaint_subcategory: "REPO_RATE_PASS_THROUGH",
+    amount_disputed_lakh: 0.18,
+    complaint_date: new Date("2024-05-20"),
+    status: "OPEN",
+    escalation_level: 1,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-06-20"),
+    complaint_text: "RBI reduced repo rate by 25bps in April 2024. SBI has not reduced my home loan EMI despite my loan being on floating rate linked to external benchmark. Excess interest charged is ₹18,000.",
+    prior_bank_response: "No response.",
+    city: "Hyderabad",
+    state: "Telangana",
+    customer_since_year: 2020,
+    tags: ["interest_rate", "repo_rate", "home_loan", "floating_rate"],
+    created_at: new Date("2024-05-21")
+  },
+
+  // ── DECCAN UCB complaints
+  {
+    _id: "CMP-2024-00501",
+    complaint_id: "CMP-2024-00501",
+    bank_id: "BNK-010",
+    bank_name: "Deccan Urban Co-op Bank",
+    complainant_type: "INDIVIDUAL",
+    complaint_category: "WITHDRAWAL_RESTRICTION",
+    complaint_subcategory: "DEPOSIT_REFUSAL",
+    amount_disputed_lakh: 3.80,
+    complaint_date: new Date("2024-04-18"),
+    status: "ESCALATED_TO_RBI",
+    escalation_level: 3,
+    rbi_intervention_required: true,
+    resolution_deadline: new Date("2024-05-18"),
+    complaint_text: "Deccan Urban Co-op Bank is refusing to allow withdrawal of my FD maturity amount of ₹3.80 lakh. The bank is citing 'liquidity constraints'. I need this money urgently for medical treatment.",
+    prior_bank_response: "Branch manager says withdrawal limit of ₹10,000 per week in place per RBI directive.",
+    city: "Pune",
+    state: "Maharashtra",
+    customer_since_year: 2016,
+    tags: ["withdrawal_restriction", "fd", "ucb", "liquidity", "escalated"],
+    created_at: new Date("2024-04-20")
+  },
+
+  // ── CANARA BANK complaints
+  {
+    _id: "CMP-2024-00601",
+    complaint_id: "CMP-2024-00601",
+    bank_id: "BNK-013",
+    bank_name: "Canara Bank",
+    complainant_type: "BUSINESS",
+    complaint_category: "LOAN_MIS_SELLING",
+    complaint_subcategory: "MSME_LOAN_DISPUTE",
+    amount_disputed_lakh: 8.50,
+    complaint_date: new Date("2024-03-15"),
+    status: "OPEN",
+    escalation_level: 2,
+    rbi_intervention_required: false,
+    resolution_deadline: new Date("2024-04-15"),
+    complaint_text: "Canara Bank Bengaluru branch sanctioned MSME loan of ₹8.50 lakh at 12.5% but after disbursement revised rate to 15.5% citing internal credit review. No prior intimation given. This violates the sanction letter terms.",
+    prior_bank_response: "Bank claims right to revise rate per loan agreement clause 14(b). Dispute ongoing.",
+    city: "Bengaluru",
+    state: "Karnataka",
+    customer_since_year: 2019,
+    tags: ["msme", "interest_rate", "loan", "dispute"],
+    created_at: new Date("2024-03-16")
+  }
+
+]);
+
+print("✅ bank_complaints: " + db.bank_complaints.countDocuments() + " documents inserted");
+
+
+// ============================================================
+// COLLECTION 2: supervisory_alerts
+// ============================================================
+db.createCollection("supervisory_alerts", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["alert_id","alert_type","severity","bank_id","triggered_on","status"],
+      properties: {
+        severity: { enum: ["LOW","MEDIUM","HIGH","CRITICAL"] },
+        status:   { enum: ["PENDING_REVIEW","ACKNOWLEDGED","ACTION_TAKEN","CLOSED","ESCALATED"] }
+      }
+    }
+  }
+});
+
+db.supervisory_alerts.createIndex({ bank_id: 1 });
+db.supervisory_alerts.createIndex({ severity: 1, status: 1 });
+db.supervisory_alerts.createIndex({ alert_type: 1 });
+db.supervisory_alerts.createIndex({ triggered_on: -1 });
+db.supervisory_alerts.createIndex({ assigned_dept: 1 });
+
+db.supervisory_alerts.insertMany([
+
+  // ── UCB Story Arc — BNK-009 (SUSPENDED)
+  {
+    _id: "ALERT-2022-0001",
+    alert_id: "ALERT-2022-0001",
+    alert_type: "NPA_SPIKE",
+    severity: "CRITICAL",
+    bank_id: "BNK-009",
+    bank_name: "Punjab & Maharashtra UCB",
+    triggered_on: new Date("2019-09-15T09:00:00Z"),
+    trigger_metric: "gross_npa_pct",
+    trigger_value: 73.40,
+    threshold: 10.00,
+    recommended_action: "Immediate special inspection — license suspension under consideration",
+    assigned_dept: "DEPT_RISK",
+    status: "CLOSED",
+    action_taken: "License suspended Sep 2019. Administrator appointed.",
+    auto_escalate_by: new Date("2019-09-22T00:00:00Z"),
+    supporting_data: {
+      prev_quarter_npa_pct: 42.10,
+      qoq_change_pct: 74.30,
+      top_defaulting_sectors: ["real_estate"],
+      top_defaulter: "HDIL — ₹3,500 Cr",
+      connected_fraud_ids: ["FRD-UCB-001","FRD-UCB-002"]
+    },
+    created_at: new Date("2019-09-15")
+  },
+  {
+    _id: "ALERT-2022-0002",
+    alert_id: "ALERT-2022-0002",
+    alert_type: "CAPITAL_BREACH",
+    severity: "CRITICAL",
+    bank_id: "BNK-009",
+    bank_name: "Punjab & Maharashtra UCB",
+    triggered_on: new Date("2019-10-01T10:30:00Z"),
+    trigger_metric: "crar_pct",
+    trigger_value: -4.20,
+    threshold: 9.00,
+    recommended_action: "PCA triggered — restrict new lending, dividend, and branch expansion",
+    assigned_dept: "DEPT_RISK",
+    status: "CLOSED",
+    action_taken: "PCA directions issued. Capital infusion plan not submitted.",
+    auto_escalate_by: new Date("2019-10-08T00:00:00Z"),
+    supporting_data: {
+      crar_prev_quarter: 6.80,
+      capital_erosion_reason: "100% provisioning on HDIL exposure",
+      connected_inspection_id: "INS-UCB9-2023"
+    },
+    created_at: new Date("2019-10-01")
+  },
+  {
+    _id: "ALERT-2022-0003",
+    alert_id: "ALERT-2022-0003",
+    alert_type: "LIQUIDITY_STRESS",
+    severity: "CRITICAL",
+    bank_id: "BNK-009",
+    bank_name: "Punjab & Maharashtra UCB",
+    triggered_on: new Date("2019-09-24T14:00:00Z"),
+    trigger_metric: "withdrawal_run_cr",
+    trigger_value: 180.00,
+    threshold: 50.00,
+    recommended_action: "Withdraw restriction order under Section 35A — cap withdrawals at ₹1,000/customer",
+    assigned_dept: "DEPT_RISK",
+    status: "CLOSED",
+    action_taken: "Withdrawal cap imposed. Depositor panic managed.",
+    auto_escalate_by: new Date("2019-09-25T00:00:00Z"),
+    supporting_data: {
+      withdrawal_run_amount_cr: 180.00,
+      depositor_count_affected: 94000,
+      connected_fraud_id: "FRD-UCB-001"
+    },
+    created_at: new Date("2019-09-24")
+  },
+
+  // ── PNB Story Arc — BNK-002
+  {
+    _id: "ALERT-2024-0101",
+    alert_id: "ALERT-2024-0101",
+    alert_type: "FRAUD_REPORTING_DELAY",
+    severity: "HIGH",
+    bank_id: "BNK-002",
+    bank_name: "Punjab National Bank",
+    triggered_on: new Date("2024-01-20T08:00:00Z"),
+    trigger_metric: "max_fraud_reporting_delay_days",
+    trigger_value: 69,
+    threshold: 21,
+    recommended_action: "Issue show cause notice — impose penalty under FMRS norms",
+    assigned_dept: "DEPT_FRAUD",
+    status: "ACTION_TAKEN",
+    action_taken: "Penalty PEN-PNB-001 issued ₹500 lakh. Compliance response received.",
+    auto_escalate_by: new Date("2024-01-27T00:00:00Z"),
+    supporting_data: {
+      overdue_fraud_reports: 6,
+      max_delay_days: 69,
+      avg_delay_days: 38,
+      connected_fraud_ids: ["FRD-PNB-001","FRD-PNB-002","FRD-PNB-003","FRD-PNB-005","FRD-PNB-008"]
+    },
+    created_at: new Date("2024-01-20")
+  },
+  {
+    _id: "ALERT-2024-0102",
+    alert_id: "ALERT-2024-0102",
+    alert_type: "NPA_DIVERGENCE",
+    severity: "HIGH",
+    bank_id: "BNK-002",
+    bank_name: "Punjab National Bank",
+    triggered_on: new Date("2024-03-05T11:00:00Z"),
+    trigger_metric: "npa_divergence_cr",
+    trigger_value: 1240.00,
+    threshold: 100.00,
+    recommended_action: "Initiate divergence investigation — consider special audit",
+    assigned_dept: "DEPT_RISK",
+    status: "ACTION_TAKEN",
+    action_taken: "Penalty PEN-PNB-002 issued ₹2,000 lakh. Reclassification ordered.",
+    auto_escalate_by: new Date("2024-03-12T00:00:00Z"),
+    supporting_data: {
+      divergence_amount_cr: 1240.00,
+      accounts_reclassified: 12,
+      connected_inspection_id: "INS-PNB-2023"
+    },
+    created_at: new Date("2024-03-05")
+  },
+
+  // ── YES BANK Story Arc — BNK-008
+  {
+    _id: "ALERT-2024-0201",
+    alert_id: "ALERT-2024-0201",
+    alert_type: "NPA_SPIKE",
+    severity: "HIGH",
+    bank_id: "BNK-008",
+    bank_name: "Yes Bank",
+    triggered_on: new Date("2024-01-10T09:30:00Z"),
+    trigger_metric: "qoq_npa_growth_pct",
+    trigger_value: 18.40,
+    threshold: 10.00,
+    recommended_action: "Request management explanation — schedule special inspection if NPA growth continues",
+    assigned_dept: "DEPT_RISK",
+    status: "ACKNOWLEDGED",
+    action_taken: "Special inspection INS-YES-2023 completed. PCA triggered.",
+    auto_escalate_by: new Date("2024-01-17T00:00:00Z"),
+    supporting_data: {
+      npa_pct_current: 1.70,
+      npa_pct_prev_quarter: 1.44,
+      qoq_npa_growth_pct: 18.40,
+      top_stress_segments: ["corporate", "nbfc_exposure"],
+      connected_fraud_ids: ["FRD-YES-001","FRD-YES-002"]
+    },
+    created_at: new Date("2024-01-10")
+  },
+  {
+    _id: "ALERT-2024-0202",
+    alert_id: "ALERT-2024-0202",
+    alert_type: "FRAUD_REPORTING_DELAY",
+    severity: "HIGH",
+    bank_id: "BNK-008",
+    bank_name: "Yes Bank",
+    triggered_on: new Date("2024-02-14T10:00:00Z"),
+    trigger_metric: "fraud_reporting_delay_days",
+    trigger_value: 45,
+    threshold: 21,
+    recommended_action: "Issue notice — penalty applicable under RBI/2023-24/85",
+    assigned_dept: "DEPT_FRAUD",
+    status: "ACTION_TAKEN",
+    action_taken: "Penalty PEN-YES-001 issued ₹300 lakh.",
+    auto_escalate_by: new Date("2024-02-21T00:00:00Z"),
+    supporting_data: {
+      delayed_cases: 3,
+      max_delay_days: 45,
+      connected_fraud_ids: ["FRD-YES-001","FRD-YES-002","FRD-YES-003"]
+    },
+    created_at: new Date("2024-02-14")
+  },
+
+  // ── INDUSIND Story Arc — BNK-015 (Cyber)
+  {
+    _id: "ALERT-2024-0301",
+    alert_id: "ALERT-2024-0301",
+    alert_type: "CYBERSECURITY_INCIDENT",
+    severity: "CRITICAL",
+    bank_id: "BNK-015",
+    bank_name: "IndusInd Bank",
+    triggered_on: new Date("2024-03-15T02:00:00Z"),
+    trigger_metric: "cyber_incidents_90d",
+    trigger_value: 3,
+    threshold: 1,
+    recommended_action: "Immediate SOC audit — mandate external CERT-In assessment within 30 days",
+    assigned_dept: "DEPT_FINTECH",
+    status: "ESCALATED",
+    action_taken: "Penalty PEN-IND-001 issued. CERT-In audit ordered.",
+    auto_escalate_by: new Date("2024-03-16T00:00:00Z"),
+    supporting_data: {
+      incidents_count_90d: 3,
+      customers_affected_total: 1320,
+      amount_compromised_cr: 5.24,
+      vulnerability_type: "API + UPI System",
+      connected_fraud_ids: ["FRD-IND-001","FRD-IND-002","FRD-IND-003"],
+      soc_team_strength: "4 analysts vs minimum required 12"
+    },
+    created_at: new Date("2024-03-15")
+  },
+  {
+    _id: "ALERT-2024-0302",
+    alert_id: "ALERT-2024-0302",
+    alert_type: "FRAUD_REPORTING_DELAY",
+    severity: "HIGH",
+    bank_id: "BNK-015",
+    bank_name: "IndusInd Bank",
+    triggered_on: new Date("2024-04-28T09:00:00Z"),
+    trigger_metric: "fraud_reporting_delay_days",
+    trigger_value: 38,
+    threshold: 21,
+    recommended_action: "Issue notice — repeat offender, enhanced penalty applicable",
+    assigned_dept: "DEPT_FRAUD",
+    status: "ACTION_TAKEN",
+    action_taken: "Penalty PEN-IND-002 issued ₹250 lakh.",
+    auto_escalate_by: new Date("2024-05-05T00:00:00Z"),
+    supporting_data: {
+      delayed_cases: 4,
+      max_delay_days: 38,
+      connected_fraud_ids: ["FRD-IND-001","FRD-IND-002","FRD-IND-004","FRD-IND-005"],
+      prior_penalty_for_same_violation: true
+    },
+    created_at: new Date("2024-04-28")
+  },
+  {
+    _id: "ALERT-2024-0303",
+    alert_id: "ALERT-2024-0303",
+    alert_type: "UPI_FAILURE_RATE_BREACH",
+    severity: "HIGH",
+    bank_id: "BNK-015",
+    bank_name: "IndusInd Bank",
+    triggered_on: new Date("2024-06-01T08:00:00Z"),
+    trigger_metric: "upi_failed_txn_pct_3m_avg",
+    trigger_value: 2.37,
+    threshold: 0.50,
+    recommended_action: "Issue compliance notice under RBI/2024-25/28 — mandate remediation plan within 15 days",
+    assigned_dept: "DEPT_FINTECH",
+    status: "PENDING_REVIEW",
+    action_taken: null,
+    auto_escalate_by: new Date("2024-06-08T00:00:00Z"),
+    supporting_data: {
+      upi_failure_pct_mar: 2.12,
+      upi_failure_pct_apr: 2.28,
+      upi_failure_pct_may: 2.45,
+      upi_complaint_count_3m: 1375,
+      npci_flagged: true
+    },
+    created_at: new Date("2024-06-01")
+  },
+
+  // ── YES BANK UPI Alert
+  {
+    _id: "ALERT-2024-0204",
+    alert_id: "ALERT-2024-0204",
+    alert_type: "UPI_FAILURE_RATE_BREACH",
+    severity: "HIGH",
+    bank_id: "BNK-008",
+    bank_name: "Yes Bank",
+    triggered_on: new Date("2024-04-05T08:00:00Z"),
+    trigger_metric: "upi_failed_txn_pct_3m_avg",
+    trigger_value: 2.10,
+    threshold: 0.50,
+    recommended_action: "Compliance notice under UPI framework — bank must submit remediation plan",
+    assigned_dept: "DEPT_FINTECH",
+    status: "ACKNOWLEDGED",
+    action_taken: "Bank submitted remediation plan — under review.",
+    auto_escalate_by: new Date("2024-04-12T00:00:00Z"),
+    supporting_data: {
+      upi_failure_pct_jan: 1.82,
+      upi_failure_pct_feb: 1.94,
+      upi_failure_pct_mar: 2.08,
+      upi_complaint_count_3m: 1295,
+      linked_cyber_incidents: 2
+    },
+    created_at: new Date("2024-04-05")
+  },
+
+  // ── DECCAN UCB
+  {
+    _id: "ALERT-2024-0401",
+    alert_id: "ALERT-2024-0401",
+    alert_type: "NPA_SPIKE",
+    severity: "HIGH",
+    bank_id: "BNK-010",
+    bank_name: "Deccan Urban Co-op Bank",
+    triggered_on: new Date("2024-04-10T09:15:00Z"),
+    trigger_metric: "gross_npa_pct",
+    trigger_value: 18.30,
+    threshold: 10.00,
+    recommended_action: "Initiate special inspection — consider PCA for UCB under revised CAMELS framework",
+    assigned_dept: "DEPT_RISK",
+    status: "ESCALATED",
+    action_taken: "AFI inspection INS-DCN-2023 completed. PCA triggered. Penalties raised.",
+    auto_escalate_by: new Date("2024-04-17T00:00:00Z"),
+    supporting_data: {
+      prev_quarter_npa_pct: 14.20,
+      qoq_change_pct: 28.87,
+      top_defaulting_sectors: ["real_estate","trading"],
+      concentration_risk: "Top 5 borrowers = 62% of loan book",
+      connected_inspection_id: "INS-DCN-2023"
+    },
+    created_at: new Date("2024-04-10")
+  },
+
+  // ── CANARA BANK
+  {
+    _id: "ALERT-2024-0601",
+    alert_id: "ALERT-2024-0601",
+    alert_type: "NPA_DIVERGENCE",
+    severity: "MEDIUM",
+    bank_id: "BNK-013",
+    bank_name: "Canara Bank",
+    triggered_on: new Date("2024-05-20T10:00:00Z"),
+    trigger_metric: "npa_divergence_cr",
+    trigger_value: 180.00,
+    threshold: 100.00,
+    recommended_action: "Issue notice for reclassification — penalty applicable",
+    assigned_dept: "DEPT_RISK",
+    status: "ACTION_TAKEN",
+    action_taken: "Penalty PEN-CNR-002 issued ₹400 lakh. Reclassification in progress.",
+    auto_escalate_by: new Date("2024-05-27T00:00:00Z"),
+    supporting_data: {
+      evergreened_accounts: 2,
+      divergence_amount_cr: 180.00,
+      sectors: ["media","hospitality"],
+      connected_fraud_id: "FRD-CNR-001"
+    },
+    created_at: new Date("2024-05-20")
+  }
+
+]);
+
+print("✅ supervisory_alerts: " + db.supervisory_alerts.countDocuments() + " documents inserted");
+
+
+// ============================================================
+// COLLECTION 3: bank_returns_submissions
+// ============================================================
+db.createCollection("bank_returns_submissions", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["submission_id","bank_id","return_type","period","due_date","status"],
+      properties: {
+        status: { enum: ["ON_TIME","LATE_SUBMITTED","PENDING","REJECTED","RESUBMITTED"] }
+      }
+    }
+  }
+});
+
+db.bank_returns_submissions.createIndex({ bank_id: 1 });
+db.bank_returns_submissions.createIndex({ return_type: 1 });
+db.bank_returns_submissions.createIndex({ status: 1 });
+db.bank_returns_submissions.createIndex({ due_date: 1 });
+
+db.bank_returns_submissions.insertMany([
+
+  // SBI — mostly on time
+  { _id:"RET-SBI-BSR-Q1-24",  submission_id:"RET-SBI-BSR-Q1-24",  bank_id:"BNK-001", bank_name:"State Bank of India",    return_type:"BSR",  return_description:"Basic Statistical Return — Credit & Deposits", period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:new Date("2024-07-12"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:96, remarks:"Clean submission",                                      created_at:new Date()},
+  { _id:"RET-SBI-FMR-Q1-24",  submission_id:"RET-SBI-FMR-Q1-24",  bank_id:"BNK-001", bank_name:"State Bank of India",    return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q1-FY2024-25", due_date:new Date("2024-07-31"), submitted_date:new Date("2024-07-30"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:98, remarks:"All fields complete",                                   created_at:new Date()},
+  { _id:"RET-SBI-SLR-JUL-24", submission_id:"RET-SBI-SLR-JUL-24", bank_id:"BNK-001", bank_name:"State Bank of India",    return_type:"SLR",  return_description:"Statutory Liquidity Ratio Compliance",         period:"Fortnight-Jul-2024", due_date:new Date("2024-07-20"), submitted_date:new Date("2024-07-19"), submission_delay_days:0, status:"ON_TIME",     penalty_applicable:false, data_quality_score:99, remarks:"SLR maintained at 18.5%",                               created_at:new Date()},
+
+  // PNB — some delays
+  { _id:"RET-PNB-BSR-Q1-24",  submission_id:"RET-PNB-BSR-Q1-24",  bank_id:"BNK-002", bank_name:"Punjab National Bank",   return_type:"BSR",  return_description:"Basic Statistical Return — Credit & Deposits", period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:new Date("2024-07-22"), submission_delay_days:7,  status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:88, remarks:"Delayed — CBS migration at Chandigarh data centre",     created_at:new Date()},
+  { _id:"RET-PNB-FMR-Q4-23",  submission_id:"RET-PNB-FMR-Q4-23",  bank_id:"BNK-002", bank_name:"Punjab National Bank",   return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q4-FY2023-24", due_date:new Date("2024-04-30"), submitted_date:new Date("2024-05-28"), submission_delay_days:28, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:82, remarks:"28-day delay — fraud data reconciliation issues. Linked to FRD-PNB-003", created_at:new Date()},
+  { _id:"RET-PNB-DSB-MAR-24", submission_id:"RET-PNB-DSB-MAR-24", bank_id:"BNK-002", bank_name:"Punjab National Bank",   return_type:"DSB",  return_description:"Domestic and Foreign Assets/Liabilities",     period:"Mar-2024",     due_date:new Date("2024-04-10"), submitted_date:new Date("2024-04-08"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:91, remarks:"On time",                                               created_at:new Date()},
+
+  // YES BANK — delays + quality issues
+  { _id:"RET-YES-FMR-Q1-24",  submission_id:"RET-YES-FMR-Q1-24",  bank_id:"BNK-008", bank_name:"Yes Bank",               return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q1-FY2024-25", due_date:new Date("2024-07-31"), submitted_date:new Date("2024-08-14"), submission_delay_days:14, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:79, remarks:"Delay due to cyber incident affecting reporting systems. Data quality poor — 3 fields rejected", created_at:new Date()},
+  { _id:"RET-YES-BSR-Q1-24",  submission_id:"RET-YES-BSR-Q1-24",  bank_id:"BNK-008", bank_name:"Yes Bank",               return_type:"BSR",  return_description:"Basic Statistical Return",                     period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:null,                  submission_delay_days:null,status:"PENDING",        penalty_applicable:true,  data_quality_score:null,remarks:"Not submitted as of audit date — 45 days overdue",        created_at:new Date()},
+  { _id:"RET-YES-SLR-JUL-24", submission_id:"RET-YES-SLR-JUL-24", bank_id:"BNK-008", bank_name:"Yes Bank",               return_type:"SLR",  return_description:"Statutory Liquidity Ratio Compliance",         period:"Fortnight-Jul-2024",due_date:new Date("2024-07-20"),submitted_date:new Date("2024-07-18"),submission_delay_days:0,status:"ON_TIME",     penalty_applicable:false, data_quality_score:95, remarks:"SLR maintained",                                        created_at:new Date()},
+
+  // UCB-009 SUSPENDED — historical bad returns
+  { _id:"RET-UCB9-FMR-Q2-19", submission_id:"RET-UCB9-FMR-Q2-19", bank_id:"BNK-009", bank_name:"Punjab & Maharashtra UCB",return_type:"FMR", return_description:"Fraud Monitoring Return",                      period:"Q2-FY2019-20", due_date:new Date("2019-10-31"), submitted_date:null,                  submission_delay_days:null,status:"PENDING",        penalty_applicable:true,  data_quality_score:null,remarks:"Never submitted — bank suspended before due date. HDIL fraud not disclosed", created_at:new Date()},
+  { _id:"RET-UCB9-BSR-Q1-19", submission_id:"RET-UCB9-BSR-Q1-19", bank_id:"BNK-009", bank_name:"Punjab & Maharashtra UCB",return_type:"BSR", return_description:"Basic Statistical Return",                     period:"Q1-FY2019-20", due_date:new Date("2019-07-15"), submitted_date:new Date("2019-09-20"),submission_delay_days:67,status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:42, remarks:"67-day delay. Data quality unacceptable — NPA figures grossly misrepresented",created_at:new Date()},
+
+  // DECCAN UCB — frequent delays
+  { _id:"RET-DCN-BSR-Q1-24",  submission_id:"RET-DCN-BSR-Q1-24",  bank_id:"BNK-010", bank_name:"Deccan Urban Co-op Bank", return_type:"BSR",  return_description:"Basic Statistical Return",                     period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:new Date("2024-08-02"), submission_delay_days:18, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:68, remarks:"Data quality poor — NPA figures inconsistent with inspection data",      created_at:new Date()},
+  { _id:"RET-DCN-FMR-Q4-23",  submission_id:"RET-DCN-FMR-Q4-23",  bank_id:"BNK-010", bank_name:"Deccan Urban Co-op Bank", return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q4-FY2023-24", due_date:new Date("2024-04-30"), submitted_date:new Date("2024-06-15"), submission_delay_days:46, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:58, remarks:"46-day delay. 2 fraud fields blank. Resubmission requested.",          created_at:new Date()},
+  { _id:"RET-DCN-SLR-JUL-24", submission_id:"RET-DCN-SLR-JUL-24", bank_id:"BNK-010", bank_name:"Deccan Urban Co-op Bank", return_type:"SLR",  return_description:"Statutory Liquidity Ratio Compliance",         period:"Fortnight-Jul-2024",due_date:new Date("2024-07-20"),submitted_date:new Date("2024-07-28"),submission_delay_days:8, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:88, remarks:"SLR maintained but submitted late",                             created_at:new Date()},
+
+  // INDUSIND — cyber-impacted submissions
+  { _id:"RET-IND-FMR-Q4-23",  submission_id:"RET-IND-FMR-Q4-23",  bank_id:"BNK-015", bank_name:"IndusInd Bank",           return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q4-FY2023-24", due_date:new Date("2024-04-30"), submitted_date:new Date("2024-05-24"), submission_delay_days:24, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:84, remarks:"Delay due to cyber incident — fraud data reconciliation affected. Linked to FRD-IND-001/002", created_at:new Date()},
+  { _id:"RET-IND-BSR-Q1-24",  submission_id:"RET-IND-BSR-Q1-24",  bank_id:"BNK-015", bank_name:"IndusInd Bank",           return_type:"BSR",  return_description:"Basic Statistical Return",                     period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:new Date("2024-07-12"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:90, remarks:"On time",                                                       created_at:new Date()},
+
+  // HDFC — best in class
+  { _id:"RET-HDFC-BSR-Q1-24", submission_id:"RET-HDFC-BSR-Q1-24", bank_id:"BNK-004", bank_name:"HDFC Bank",               return_type:"BSR",  return_description:"Basic Statistical Return",                     period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:new Date("2024-07-10"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:99, remarks:"Exemplary — submitted 5 days early",                            created_at:new Date()},
+  { _id:"RET-HDFC-FMR-Q1-24", submission_id:"RET-HDFC-FMR-Q1-24", bank_id:"BNK-004", bank_name:"HDFC Bank",               return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q1-FY2024-25", due_date:new Date("2024-07-31"), submitted_date:new Date("2024-07-25"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:99, remarks:"Clean data — no anomalies",                                     created_at:new Date()},
+
+  // CANARA
+  { _id:"RET-CNR-FMR-Q4-23",  submission_id:"RET-CNR-FMR-Q4-23",  bank_id:"BNK-013", bank_name:"Canara Bank",             return_type:"FMR",  return_description:"Fraud Monitoring Return",                      period:"Q4-FY2023-24", due_date:new Date("2024-04-30"), submitted_date:new Date("2024-05-10"), submission_delay_days:10, status:"LATE_SUBMITTED",penalty_applicable:true,  data_quality_score:85, remarks:"10-day delay. Fraud FRD-CNR-001 details incomplete — resubmission requested", created_at:new Date()},
+  { _id:"RET-CNR-BSR-Q1-24",  submission_id:"RET-CNR-BSR-Q1-24",  bank_id:"BNK-013", bank_name:"Canara Bank",             return_type:"BSR",  return_description:"Basic Statistical Return",                     period:"Q1-FY2024-25", due_date:new Date("2024-07-15"), submitted_date:new Date("2024-07-14"), submission_delay_days:0,  status:"ON_TIME",      penalty_applicable:false, data_quality_score:93, remarks:"On time",                                                       created_at:new Date()}
+
+]);
+
+print("✅ bank_returns_submissions: " + db.bank_returns_submissions.countDocuments() + " documents inserted");
+
+
+// ============================================================
+// SUMMARY
+// ============================================================
+print("\n========================================");
+print("RBI MongoDB Setup Complete");
+print("========================================");
+print("bank_complaints:        " + db.bank_complaints.countDocuments());
+print("supervisory_alerts:     " + db.supervisory_alerts.countDocuments());
+print("bank_returns_submissions:" + db.bank_returns_submissions.countDocuments());
+print("========================================\n");
+
+// ============================================================
+// END OF MONGODB SETUP
+// ============================================================
