@@ -1,0 +1,31 @@
+Updated DRISHTI Architecture: Orchestrator Model
+1. Central Hub
+ Planner (Orchestration) Agent
+ Role: The central router and state manager. It evaluates the user's request, checks the shared ⁠Context⁠ (database/memory), and decides which specialized agent to call next.
+ Retry Mechanism: If any sub-agent fails (e.g., the SQL Agent generates invalid syntax), the Orchestrator catches the error and loops back to the agent with feedback to try again.
+2. Top Row Agents (Blue)
+ NL Query Agent
+ Replaces: Decompose & Paraphrase + Classifier
+ Role: Parses raw input, extracts entities (bank names, dates), and disambiguates the question (e.g., asking clarifying questions if the query is too vague).
+ SQL Generator Agent
+ Replaces: NL-SQL / NL-NoSQL Tool (Generation phase)
+ Role: Writes the structured PostgreSQL or MongoDB queries based on the schema and the NL Query Agent's parsed intent.
+ Data Retrieval Agent
+ Replaces: Execution phase of Database Tools
+ Role: Safely executes the queries built by the SQL Generator Agent against the actual databases. If it hits an execution error, it sends the error back to the Orchestrator to trigger a retry loop.
+ Insight Synthesis Agent
+ Replaces: Synthesizer Agent
+ Role: Takes the raw, joined data and narrates the findings in plain, professional RBI domain language.
+3. Bottom Row Agents (Green)
+ Query Planning Agent
+ Replaces: Planner Agent (Source Routing)
+ Role: Identifies where the data lives. It tells the Orchestrator whether to route to SQL, NoSQL, Vector Docs, or a combination of them.
+ Document Search Agent
+ Replaces: Vector Search Tool
+ Role: Performs semantic vector search on RBI circulars, guidelines, and unstructured documents.
+ Data Fusion Agent
+ Replaces: Join Results + Validator Node
+ Role: Reconciles multi-source results. It joins SQL data with NoSQL/Vector data, validates schema alignment, checks for hallucinations, and ensures referential integrity across the fetched data.
+ Visualization Agent
+ Replaces: Viz Tool
+ Role: Generates the JSON specs for charts, tables, and summary cards to be rendered on the frontend.
