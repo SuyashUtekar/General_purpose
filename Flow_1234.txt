@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBI Agentic AI — Updated LangGraph Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #06080f;
+  --surface: #0c0f1a;
+  --s2: #10141f;
+  --s3: #151924;
+  --border: #1c2135;
+  --b2: #242a40;
+
+  --text: #dce2f5;
+  --sub: #8892b0;
+  --dim: #4a5270;
+
+  /* Agent tier colors */
+  --blue-top: #1e6fd4;
+  --blue-top-bg: #071628;
+  --blue-top-border: #1e4580;
+
+  --green-bot: #0e8a6a;
+  --green-bot-bg: #051a12;
+  --green-bot-border: #0d5040;
+
+  --planner-bg: #0d0a1e;
+  --planner-border: #6040c8;
+  --planner-glow: #6040c825;
+
+  --entry-border: #2a4080;
+  --exit-border: #1a5040;
+
+  --err-bg: #1a0808;
+  --err-border: #6a1818;
+
+  --arrow: #2a3560;
+  --arrow-active: #4a80d0;
+  --retry: #c8a020;
+
+  --teal: #20c0a8;
+  --violet: #9870f0;
+  --amber: #e8a030;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Dot grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle, #1c2135 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap { position: relative; z-index: 1; max-width: 1140px; margin: 0 auto; padding: 0 28px 80px; }
+
+/* ── HEADER ── */
+header {
+  padding: 48px 0 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.h-left {}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 12px;
+}
+h1 {
+  font-size: clamp(22px, 3.5vw, 38px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.4px;
+}
+h1 span { color: var(--teal); }
+.h-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.hbadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* ── CHANGE SUMMARY ── */
+.changes-bar {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin-bottom: 44px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.changes-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+  padding-top: 2px;
+  white-space: nowrap;
+}
+.changes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.change-pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--s3);
+  border: 1px solid var(--border);
+  color: var(--sub);
+}
+.change-pill.added { border-color: #1a4030; color: #50d090; }
+.change-pill.modified { border-color: #1a2840; color: #60a8e8; }
+.change-pill.removed { border-color: #3a1818; color: #e07070; }
+
+/* ── FLOW DIAGRAM ── */
+.flow-diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 28px;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+/* Entry/Exit labels */
+.flow-entry-label, .flow-exit-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+.flow-entry-label::before, .flow-entry-label::after,
+.flow-exit-label::before, .flow-exit-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ── ENTRY ROW ── */
+.entry-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.entry-node {
+  background: #08101c;
+  border: 1px solid var(--entry-border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6090d8;
+  text-align: center;
+  position: relative;
+}
+.entry-node .e-sub {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+
+/* ── L1 / DECOMPOSE ROW ── */
+.l1-row {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 12px;
+  margin: 4px 0;
+  flex-wrap: wrap;
+}
+.l1-node {
+  background: #080e1e;
+  border: 1.5px solid #2858a0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7ab0f0;
+  flex: 1;
+  min-width: 160px;
+  max-width: 240px;
+}
+.l1-node .n-sub { font-size: 10px; font-weight: 400; color: var(--dim); font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+
+/* ── PLANNER HUB ── */
+.planner-hub {
+  background: var(--planner-bg);
+  border: 1.5px solid var(--planner-border);
+  border-radius: 10px;
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #b090ff;
+  position: relative;
+  box-shadow: 0 0 40px var(--planner-glow);
+  margin: 4px 0;
+}
+.planner-hub::before {
+  content: '';
+  position: absolute; inset: -3px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6040c815, transparent, #6040c815);
+  z-index: -1;
+}
+.planner-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  color: #6040c8;
+  margin-top: 3px;
+}
+.retry-badge {
+  position: absolute;
+  top: -10px; right: 16px;
+  background: #1a1400;
+  border: 1px solid var(--retry);
+  border-radius: 12px;
+  padding: 2px 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--retry);
+  letter-spacing: 1px;
+}
+
+/* ── AGENT TIERS ── */
+.tier {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+/* Top tier — blue */
+.agent-top {
+  background: var(--blue-top-bg);
+  border: 1.5px solid var(--blue-top-border);
+  border-radius: 8px;
+  padding: 14px 14px 12px;
+  text-align: center;
+  flex: 1;
+  min-width: 155px;
+  max-width: 220px;
+  position: relative;
+  transition: border-color .2s, box-shadow .2s;
+  cursor: default;
+}
+.agent-top:hover { border-color: #3090f0; box-shadow: 0 0 16px #1e6fd430; }
+.agent-top .a-name { font-size: 12px; font-weight: 700; color: #7ab8f5; line-height: 1.3; }
+.agent-top .a-sub  { font-size: 10px; color: #3a5880; font-family: 'JetBrains Mono', monospace; margin-top: 4px; line-height: 1.4; }
+
+/* Bottom tier — green */
+.agent-bot {
+  background: var(--green-bot-bg);
+  border: 1.5px solid var(--green-bot-border);
+  border-radius: 8px;
+  padding: 14px 14px 12px;
+  text-align: center;
+  flex: 1;
+  min-width: 155px;
+  max-width: 220px;
+  position: relative;
+  transition: border-color .2s, box-shadow .2s;
+  cursor: default;
+}
+.agent-bot:hover { border-color: #20a880; box-shadow: 0 0 16px #0e8a6a30; }
+.agent-bot .a-name { font-size: 12px; font-weight: 700; color: #40c8a0; line-height: 1.3; }
+.agent-bot .a-sub  { font-size: 10px; color: #1a5040; font-family: 'JetBrains Mono', monospace; margin-top: 4px; line-height: 1.4; }
+
+/* Context store */
+.context-store {
+  background: #0a1428;
+  border: 1.5px solid #1e4070;
+  border-radius: 50px 50px 8px 8px;
+  padding: 12px 16px;
+  text-align: center;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+.context-store .a-name { font-size: 11px; font-weight: 700; color: #4a80c8; }
+.context-store .a-sub  { font-size: 9px; color: #2a3860; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+/* ── BIDIRECTIONAL ARROW ROWS ── */
+.bidir-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2px 0;
+  padding: 0 4px;
+}
+.bidir {
+  flex: 1;
+  min-width: 155px;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 0;
+}
+.bidir-arrows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  height: 36px;
+  justify-content: center;
+  position: relative;
+}
+.bd-up {
+  font-size: 10px;
+  color: var(--arrow-active);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.bd-line {
+  width: 1.5px;
+  background: var(--b2);
+  flex: 1;
+  min-height: 14px;
+}
+.bd-down {
+  font-size: 10px;
+  color: var(--arrow-active);
+  line-height: 1;
+  margin-top: 2px;
+}
+.retry-icon {
+  font-size: 11px;
+  color: var(--retry);
+  margin: 0 4px;
+}
+
+.bidir-arrows-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Vertical connector for planner to/from agents */
+.v-connector {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+}
+.v-line {
+  width: 1.5px;
+  height: 28px;
+  background: var(--b2);
+  position: relative;
+}
+.v-line::after {
+  content: '▼';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: var(--arrow-active);
+}
+.v-line.up::after { content: '▲'; bottom: auto; top: -10px; }
+
+/* ── VALIDATION + ERROR ROW ── */
+.validation-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 4px 0;
+  flex-wrap: wrap;
+}
+.validator-node {
+  background: var(--s2);
+  border: 1.5px solid var(--b2);
+  border-radius: 8px;
+  padding: 12px 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8090b8;
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+.validator-node .n-sub { font-size: 10px; font-weight: 400; color: var(--dim); font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+.err-node {
+  background: var(--err-bg);
+  border: 1.5px solid var(--err-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #d06060;
+  min-width: 150px;
+}
+.err-node .n-sub { font-size: 10px; font-weight: 400; color: #3a1818; font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+
+/* ── OUTPUT ROW ── */
+.output-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+.output-node {
+  background: #061410;
+  border: 1.5px solid #1a5040;
+  border-radius: 8px;
+  padding: 12px 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal);
+  flex: 1;
+  min-width: 180px;
+  max-width: 280px;
+}
+.output-node .n-sub { font-size: 10px; font-weight: 400; color: #1a5040; font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+
+/* Audit node */
+.audit-node {
+  background: #100e04;
+  border: 1.5px solid #5a4010;
+  border-radius: 8px;
+  padding: 12px 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c8901a;
+  flex: 1;
+  min-width: 180px;
+  max-width: 280px;
+}
+.audit-node .n-sub { font-size: 10px; font-weight: 400; color: #3a2808; font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+
+/* Final response */
+.final-node {
+  background: #080e1c;
+  border: 1.5px solid #2a4080;
+  border-radius: 8px;
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6090d8;
+  max-width: 280px;
+  width: 100%;
+  margin: 0 auto;
+}
+.final-node .n-sub { font-size: 10px; font-weight: 400; color: #1a2a50; font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+
+/* Arrow helpers */
+.a-down {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 0;
+  height: 28px;
+}
+.a-down-line { width: 1.5px; flex: 1; background: var(--b2); }
+.a-down-tip { font-size: 8px; color: var(--arrow-active); }
+
+.route-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 2px 0;
+  flex-wrap: wrap;
+}
+.route-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+.rp-pass { color: #50c080; border-color: #1a4028; background: #060e08; }
+.rp-fail { color: #d06060; border-color: #501818; background: #0e0606; }
+.rp-lc   { color: var(--amber); border-color: #402808; background: #0a0802; }
+
+/* Section spacer for inner flow parts */
+.inner-spacer { height: 8px; }
+
+/* ── NODE DETAIL TABLE ── */
+.detail-section { margin-top: 44px; }
+.ds-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ds-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.agent-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ac {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  position: relative;
+}
+.ac:hover { border-color: var(--b2); }
+
+.ac-tier {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.ac-tier.top { color: #3a70b8; }
+.ac-tier.bot { color: #206848; }
+.ac-tier.hub { color: var(--violet); }
+
+.ac-name {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.ac-name.top { color: #7ab8f5; }
+.ac-name.bot { color: #40c8a0; }
+.ac-name.hub { color: #b090ff; }
+
+.ac-desc { font-size: 12px; color: var(--sub); line-height: 1.55; margin-bottom: 8px; }
+.ac-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+.ac-tool {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--dim);
+}
+
+.langgraph-map {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-top: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 2;
+  color: var(--sub);
+}
+.lm-title {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 14px;
+}
+.lm-kw { color: #7ab0f0; }
+.lm-fn { color: var(--amber); }
+.lm-st { color: #50d090; }
+.lm-cm { color: var(--dim); font-style: italic; }
+.lm-sym{ color: var(--violet); }
+
+@media (max-width: 700px) {
+  .tier, .bidir-row, .validation-row, .output-row, .entry-row { gap: 8px; }
+  .agent-top, .agent-bot { min-width: 130px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="h-left">
+    <div class="eyebrow">Agentic AI Hackathon 2026 · RBI Supervisory Intelligence · Updated Architecture</div>
+    <h1>Updated LangGraph Flow<br><span>Hub-and-Spoke Agent Architecture</span></h1>
+  </div>
+  <div class="h-badges">
+    <span class="hbadge" style="color:var(--teal);border-color:#1a4030;background:#060e0a">8 Agents</span>
+    <span class="hbadge" style="color:var(--violet);border-color:#2a1850;background:#0a0614">1 Orchestrator</span>
+    <span class="hbadge" style="color:var(--amber);border-color:#3a2008;background:#0c0804">Retry Loops</span>
+    <span class="hbadge" style="color:#7ab8f5;border-color:#1a3060;background:#060a14">Context Store</span>
+  </div>
+</header>
+
+<!-- CHANGES BAR -->
+<div class="changes-bar">
+  <div class="changes-label">What Changed</div>
+  <div class="changes-list">
+    <span class="change-pill added">+ NL Query Agent (was: Decompose node)</span>
+    <span class="change-pill added">+ SQL Generator Agent (was: NL-SQL tool)</span>
+    <span class="change-pill added">+ Data Retrieval Agent (was: tools directly)</span>
+    <span class="change-pill added">+ Insight Synthesis Agent (was: Synthesizer)</span>
+    <span class="change-pill added">+ Query Planning Agent (was: Route Sources)</span>
+    <span class="change-pill added">+ Document Search Agent (was: Vector Search tool)</span>
+    <span class="change-pill added">+ Data Fusion Agent (was: Join Results node)</span>
+    <span class="change-pill added">+ Visualization Agent (was: Viz tool)</span>
+    <span class="change-pill added">+ Context Store (Redis + session memory)</span>
+    <span class="change-pill modified">~ Planner = central hub (was: linear node)</span>
+    <span class="change-pill added">+ Retry mechanism on all agents</span>
+    <span class="change-pill added">+ Bidirectional Planner ↔ Agent communication</span>
+  </div>
+</div>
+
+<!-- FLOW DIAGRAM -->
+<div class="flow-diagram">
+
+  <!-- Entry -->
+  <div class="flow-entry-label">ENTRY</div>
+  <div class="entry-row">
+    <div class="entry-node">
+      User Query
+      <div class="e-sub">Dept · Session ID · plain language</div>
+    </div>
+  </div>
+
+  <!-- Down arrow -->
+  <div class="a-down"><div class="a-down-line"></div><div class="a-down-tip">▼</div></div>
+
+  <!-- L1 Gate + Decompose — kept from original flow -->
+  <div class="l1-row">
+    <div class="l1-node">
+      L1 Intent Classifier
+      <div class="n-sub">Valid / Invalid gate · rule-first · 2–5ms</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--dim);font-size:11px;padding:0 4px">→</div>
+    <div class="l1-node">
+      Decompose &amp; Paraphrase
+      <div class="n-sub">SpaCy NER · SLM paraphrase · asyncio.gather()</div>
+    </div>
+  </div>
+
+  <div class="a-down"><div class="a-down-line"></div><div class="a-down-tip">▼</div></div>
+
+  <!-- ═══════════ TOP AGENT TIER ═══════════ -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#2a4878;text-align:center;margin-bottom:6px">PROCESSING AGENTS — TIER 1</div>
+
+  <div class="tier">
+    <div class="agent-top">
+      <div class="a-name">NL Query Agent</div>
+      <div class="a-sub">Parse intent · disambiguate · classify source</div>
+    </div>
+    <div class="agent-top">
+      <div class="a-name">SQL Generator Agent</div>
+      <div class="a-sub">Auto-generate structured query · AST guard</div>
+    </div>
+    <div class="agent-top">
+      <div class="a-name">Data Retrieval Agent</div>
+      <div class="a-sub">Execute queries across SQL / NoSQL sources</div>
+    </div>
+    <div class="agent-top">
+      <div class="a-name">Insight Synthesis Agent</div>
+      <div class="a-sub">Narrate findings · RBI domain language · stream</div>
+    </div>
+  </div>
+
+  <!-- Bidirectional arrows + retry icons — top tier to Planner -->
+  <div class="bidir-row">
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PLANNER HUB ═══════════ -->
+  <div class="planner-hub">
+    <div class="retry-badge">↻ Retry &amp; Continuous Feedback</div>
+    Planner (Orchestration) Agent
+    <div class="planner-sub">Plan cache · DAG · Dept access rules · Long-term memory · 0–200ms</div>
+  </div>
+
+  <!-- Bidirectional arrows — Planner to bottom tier -->
+  <div class="bidir-row">
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <div class="bidir">
+      <div class="bidir-arrows-row">
+        <span class="bd-up">▲</span>
+        <div class="bd-line"></div>
+        <span class="retry-icon">↻</span>
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+    <!-- Context store arrow -->
+    <div class="bidir" style="min-width:110px;max-width:130px">
+      <div class="bidir-arrows-row">
+        <div class="bd-line"></div>
+        <span class="bd-down">▼</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ BOTTOM AGENT TIER ═══════════ -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#1a5038;text-align:center;margin-bottom:6px">SPECIALISED AGENTS — TIER 2</div>
+
+  <div class="tier">
+    <div class="agent-bot">
+      <div class="a-name">Query Planning Agent</div>
+      <div class="a-sub">Identify sources: SQL · NoSQL · Vector Docs</div>
+    </div>
+    <div class="agent-bot">
+      <div class="a-name">Document Search Agent</div>
+      <div class="a-sub">Semantic vector search · BM25 pre-filter · RAG</div>
+    </div>
+    <div class="agent-bot">
+      <div class="a-name">Data Fusion Agent</div>
+      <div class="a-sub">Join + reconcile multi-source results on bank_id</div>
+    </div>
+    <div class="agent-bot">
+      <div class="a-name">Visualization Agent</div>
+      <div class="a-sub">Charts · tables · summary cards · Chart.js spec</div>
+    </div>
+    <!-- Context Store -->
+    <div class="context-store">
+      <div class="a-name">Context</div>
+      <div class="a-sub">Redis · Session · Long-term memory</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ VALIDATOR + ERROR ═══════════ -->
+  <div class="a-down"><div class="a-down-line"></div><div class="a-down-tip">▼</div></div>
+
+  <div class="validation-row">
+    <div class="validator-node">
+      Validator Node
+      <div class="n-sub">7 rule checks · PASS / LOW_CONF / FAIL · parallel with Insight Synthesis</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:center">
+      <span class="route-pill rp-fail">FAIL</span>
+      <span style="font-size:10px;color:var(--err-border)">▶</span>
+    </div>
+    <div class="err-node">
+      Error Handler Node
+      <div class="n-sub">Invalid · FAIL · Timeout → END</div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:center;gap:16px;margin:4px 0">
+    <span class="route-pill rp-pass">PASS</span>
+    <span class="route-pill rp-lc">LOW_CONF + disclaimer</span>
+  </div>
+
+  <div class="a-down"><div class="a-down-line"></div><div class="a-down-tip">▼</div></div>
+
+  <!-- ═══════════ OUTPUT ═══════════ -->
+  <div class="output-row">
+    <div class="output-node">
+      Final Response
+      <div class="n-sub">Streamed SSE · citations · confidence badge · follow-up</div>
+    </div>
+    <div class="audit-node">
+      Audit Logger Node
+      <div class="n-sub">Immutable Postgres · data lineage · async</div>
+    </div>
+  </div>
+
+  <div class="flow-exit-label" style="margin-top:16px">END · RBI Officer UI</div>
+</div>
+
+
+<!-- AGENT REFERENCE CARDS -->
+<div class="detail-section">
+  <div class="ds-title">Agent Reference</div>
+
+  <div class="agent-cards">
+
+    <div class="ac">
+      <div class="ac-tier hub">ORCHESTRATION HUB</div>
+      <div class="ac-name hub">Planner Agent</div>
+      <div class="ac-desc">Central orchestrator. Dispatches tasks to all 8 agents bidirectionally. Manages retry loops, context injection, and dept access enforcement.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">plan_cache</span><span class="ac-tool">dag_builder</span>
+        <span class="ac-tool">retry_policy</span><span class="ac-tool">context_store</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier top">TIER 1 — PROCESSING</div>
+      <div class="ac-name top">NL Query Agent</div>
+      <div class="ac-desc">Parses intent from natural language. Disambiguates vague terms using domain glossary. Classifies source type and query type.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">spacy_ner</span><span class="ac-tool">l1_classifier</span>
+        <span class="ac-tool">domain_glossary</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier top">TIER 1 — PROCESSING</div>
+      <div class="ac-name top">SQL Generator Agent</div>
+      <div class="ac-desc">Converts intent to parameterized SQL. Applies AST guard rails — blocks non-SELECT, halluicinated columns, PII fields, enforces LIMIT.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">text_to_sql</span><span class="ac-tool">ast_guard</span>
+        <span class="ac-tool">schema_store</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier top">TIER 1 — PROCESSING</div>
+      <div class="ac-name top">Data Retrieval Agent</div>
+      <div class="ac-desc">Executes validated queries against PostgreSQL and MongoDB via MCP connectors. Manages connection pools. Logs every tool call to audit buffer.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">asyncpg_pool</span><span class="ac-tool">motor_client</span>
+        <span class="ac-tool">mcp_connector</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier top">TIER 1 — PROCESSING</div>
+      <div class="ac-name top">Insight Synthesis Agent</div>
+      <div class="ac-desc">Merges all results into streamed natural language. Applies RBI domain terminology. Appends confidence badge, source citations, and follow-up suggestion.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">sse_stream</span><span class="ac-tool">domain_lang</span>
+        <span class="ac-tool">citation_builder</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier bot">TIER 2 — SPECIALIST</div>
+      <div class="ac-name bot">Query Planning Agent</div>
+      <div class="ac-desc">Decides which data sources to query — SQL, NoSQL, Vector, or all. Uses routing signal rules and source registry. Routes to parallel or single-source execution.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">routing_signals</span><span class="ac-tool">source_registry</span>
+        <span class="ac-tool">parallel_executor</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier bot">TIER 2 — SPECIALIST</div>
+      <div class="ac-name bot">Document Search Agent</div>
+      <div class="ac-desc">Semantic search over 15 RBI PDFs. Two-stage: BM25 pre-filter narrows to 50 chunks, then dense BAAI/bge-m3 search on subset. OCR cache for tables and images.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">bm25_index</span><span class="ac-tool">bge_m3_embed</span>
+        <span class="ac-tool">ocr_cache</span><span class="ac-tool">chroma_db</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier bot">TIER 2 — SPECIALIST</div>
+      <div class="ac-name bot">Data Fusion Agent</div>
+      <div class="ac-desc">Inner joins results from SQL, NoSQL, and Vector on bank_id or account_id. Tags every row with source provenance. Saves result to session memory for follow-ups.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">in_memory_join</span><span class="ac-tool">provenance_tag</span>
+        <span class="ac-tool">session_memory</span>
+      </div>
+    </div>
+
+    <div class="ac">
+      <div class="ac-tier bot">TIER 2 — SPECIALIST</div>
+      <div class="ac-name bot">Visualization Agent</div>
+      <div class="ac-desc">Infers chart type from data shape. Generates Chart.js JSON spec — client-side render only. RBI risk color palette. Threshold annotations for compliance limits.</div>
+      <div class="ac-tools">
+        <span class="ac-tool">chart_type_infer</span><span class="ac-tool">chartjs_spec</span>
+        <span class="ac-tool">rbi_palette</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LangGraph mapping -->
+  <div class="langgraph-map">
+    <div class="lm-title">LangGraph Node Mapping — Updated</div>
+<span class="lm-cm"># Updated graph assembly matching sample flow architecture</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"l1_gate"</span>,           l1_intent_classifier)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># NEW: explicit gate node</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"nl_query_agent"</span>,     nl_query_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># RENAMED from decompose</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"sql_generator_agent"</span>, sql_generator_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># RENAMED from nl_sql_tool</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"data_retrieval_agent"</span>,data_retrieval_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># NEW: wraps SQL+NoSQL exec</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"insight_synthesis_agent"</span>,insight_synthesis_agent)<span class="lm-cm"># RENAMED from synthesizer</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"planner_agent"</span>,       planner_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># CENTRAL HUB — unchanged</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"query_planning_agent"</span>, query_planning_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># RENAMED from route_sources</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"document_search_agent"</span>,document_search_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># RENAMED from vector_search</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"data_fusion_agent"</span>,    data_fusion_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># RENAMED from join_results</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"visualization_agent"</span>,  visualization_agent)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># RENAMED from viz_tool</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"validator_node"</span>,       validator_node)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># UNCHANGED</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"audit_logger"</span>,         audit_logger)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># UNCHANGED</span><br>
+g.<span class="lm-fn">add_node</span>(<span class="lm-st">"error_handler"</span>,        error_handler)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lm-cm"># UNCHANGED</span><br>
+<br>
+<span class="lm-cm"># Planner ↔ All agents: bidirectional via state + conditional edges</span><br>
+<span class="lm-cm"># Retry: each agent writes retry_count to state; planner re-dispatches if needed</span>
+  </div>
+
+</div>
+
+</div><!-- /wrap -->
+</body>
+</html>
