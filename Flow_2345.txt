@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBI Agentic AI — Wireframe</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:      #f5f6f8;
+  --paper:   #ffffff;
+  --ink:     #1a1d28;
+  --ink2:    #2d3248;
+  --border:  #c8ccd8;
+  --border2: #a8adc0;
+  --muted:   #7a7f98;
+  --dim:     #b0b4c8;
+  --shade:   #eceef4;
+  --hatch:   repeating-linear-gradient(
+               -45deg,
+               transparent,
+               transparent 3px,
+               #dde0ea 3px,
+               #dde0ea 4px
+             );
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  padding: 0 0 80px;
+}
+
+/* Blueprint grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px),
+    linear-gradient(#dde0ea 1px, transparent 1px),
+    linear-gradient(90deg, #dde0ea 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page { max-width: 1080px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* ── HEADER ── */
+header {
+  padding: 40px 0 28px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.h-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(18px, 2.8vw, 30px);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+}
+h1 span { border-bottom: 2px solid var(--ink2); }
+.h-right {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+  line-height: 1.8;
+}
+
+/* ── LEGEND ── */
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+  padding: 14px 18px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.leg { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.leg-box { width: 24px; height: 16px; border: 1.5px solid; border-radius: 2px; flex-shrink: 0; }
+.leg-box.entry  { background: #f0f2f8; border-color: var(--border2); }
+.leg-box.proc   { background: #e8edf8; border-color: #8090c0; border-style: solid; }
+.leg-box.spec   { background: #e8f5ee; border-color: #60a878; border-style: solid; }
+.leg-box.hub    { background: #f0edf8; border-color: #8060c0; border-style: dashed; border-width: 2px; }
+.leg-box.ctx    { background: #eef3f8; border-color: #6090b8; border-style: solid; border-radius: 50% 50% 2px 2px; }
+.leg-box.gate   { background: #fdf8e8; border-color: #b09030; border-style: dashed; }
+.leg-box.output { background: #f8f0e8; border-color: #b07030; border-style: solid; }
+.leg-box.err    { background: #f8eae8; border-color: #c06050; border-style: solid; }
+.leg-line { width: 28px; height: 2px; }
+.leg-line.bidir { background: linear-gradient(90deg, var(--ink2) 0%, var(--border2) 50%, var(--ink2) 100%); }
+.leg-line.retry { border-top: 2px dashed var(--muted); background: none; }
+.leg-line.one   { background: var(--ink2); }
+
+/* ── WIREFRAME CANVAS ── */
+.canvas {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 36px 32px 40px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── ANNOTATION SYSTEM ── */
+.ann {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  justify-content: center;
+}
+.ann::before, .ann::after { content: ''; flex: 1; max-width: 40px; height: 1px; background: var(--dim); }
+
+/* ── BLOCK primitives ── */
+.block {
+  border: 1.5px solid var(--border2);
+  border-radius: 3px;
+  background: var(--paper);
+  text-align: center;
+  padding: 10px 12px;
+  position: relative;
+}
+.block .b-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink2);
+  line-height: 1.3;
+}
+.block .b-sub {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.block .b-dim {
+  position: absolute;
+  bottom: -9px; right: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  color: var(--dim);
+  background: var(--paper);
+  padding: 0 3px;
+}
+
+/* Variants */
+.block.entry  { background: #f0f2f8; border-color: var(--border2); }
+.block.l1gate { background: #fdf8e8; border-color: #c0a840; border-style: dashed; }
+.block.proc   { background: #e8edf8; border-color: #7080b8; }
+.block.spec   { background: #e8f5ee; border-color: #5a9870; }
+.block.output { background: #f8f2e8; border-color: #b07830; }
+.block.audit  { background: #f8f0e0; border-color: #a07020; }
+.block.err    { background: #f8eae8; border-color: #c06050; }
+.block.final  { background: #eaeff8; border-color: #5070a8; }
+.block.valid  { background: var(--shade); border-color: var(--border2); }
+
+/* Hub block */
+.hub-block {
+  background: #f0edf8;
+  border: 2px dashed #8060c0;
+  border-radius: 4px;
+  padding: 14px 20px;
+  text-align: center;
+  position: relative;
+}
+.hub-block .b-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5040a0;
+}
+.hub-block .b-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #9080c8;
+  margin-top: 3px;
+}
+.retry-tag {
+  position: absolute;
+  top: -11px; right: 14px;
+  background: var(--paper);
+  border: 1px dashed #b09030;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #8a7020;
+  white-space: nowrap;
+}
+
+/* Context cylinder */
+.ctx-block {
+  background: #eef3f8;
+  border: 1.5px solid #6090b8;
+  border-radius: 50% 50% 3px 3px / 12px 12px 3px 3px;
+  padding: 12px 14px 10px;
+  text-align: center;
+  min-width: 100px;
+}
+.ctx-block .b-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #405880; }
+.ctx-block .b-sub   { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #6080a0; margin-top: 2px; }
+
+/* Diamond */
+.diamond-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 2px 0;
+}
+.diamond {
+  width: 90px; height: 50px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.diamond svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.diamond .d-label {
+  position: relative; z-index: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--ink2);
+  text-align: center;
+}
+
+/* ── ARROW SYSTEM ── */
+.arr-down {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 28px;
+  gap: 0;
+}
+.arr-down-line { width: 1.5px; flex: 1; background: var(--ink2); }
+.arr-down-tip  { font-size: 8px; color: var(--ink2); line-height: 1; }
+
+.arr-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--muted);
+  margin: 2px 0;
+  display: inline-block;
+}
+.arr-label.valid  { border-color: #70b888; color: #3a8050; background: #f0f8f0; }
+.arr-label.invalid{ border-color: #c07060; color: #904040; background: #f8f0ee; }
+.arr-label.pass   { border-color: #70b888; color: #3a8050; background: #f0f8f0; }
+.arr-label.fail   { border-color: #c07060; color: #904040; background: #f8f0ee; }
+.arr-label.lc     { border-color: #c09050; color: #805030; background: #f8f4ec; }
+
+/* Bidirectional connector column */
+.bidir-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  height: 44px;
+  justify-content: center;
+}
+.bd-shaft {
+  width: 1.5px;
+  flex: 1;
+  background: var(--ink2);
+}
+.bd-arrow-up, .bd-arrow-dn {
+  font-size: 7px;
+  color: var(--ink2);
+  line-height: 1;
+}
+.bd-retry {
+  font-size: 10px;
+  color: #9a8020;
+  line-height: 1;
+  margin: 1px 0;
+}
+
+/* ── GRID LAYOUTS ── */
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.row.center { justify-content: center; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+/* Tier labels */
+.tier-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: center;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tier-label::before, .tier-label::after { content: ''; flex: 1; height: 1px; background: var(--dim); }
+
+/* Number badges on blocks */
+.num-badge {
+  position: absolute;
+  top: -9px; left: 8px;
+  background: var(--ink2);
+  color: var(--paper);
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+/* Horizontal connector strip above/below tier rows */
+.h-connector {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+  position: relative;
+}
+
+/* Measurement annotations */
+.measure {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  color: var(--dim);
+}
+
+/* ── SECTION CALLOUT ── */
+.callout-strip {
+  background: var(--shade);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ink2);
+  border-radius: 0 3px 3px 0;
+  padding: 10px 16px;
+  margin: 28px 0 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cs-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cs-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink2);
+  padding: 2px 8px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+/* ── STATE BOX ── */
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px;
+  margin-top: 28px;
+}
+.state-field {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 7px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.sf-name { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: var(--ink2); }
+.sf-type { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); }
+
+.section-divider {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 36px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+@media(max-width:680px) {
+  .row { gap: 6px; }
+  .block .b-sub { display: none; }
+  .legend { gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="h-meta">Wireframe · RBI Agentic AI Hackathon 2026 · Hub-and-Spoke Architecture</div>
+    <h1>Updated LangGraph Flow<br><span>Wireframe</span></h1>
+  </div>
+  <div class="h-right">
+    Revision 3.0 — Sample Flow Incorporated<br>
+    8 Agents · 1 Orchestrator · Retry Loops<br>
+    Context Store · Bidirectional Communication
+  </div>
+</header>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="leg"><div class="leg-box entry"></div>Entry / Exit</div>
+  <div class="leg"><div class="leg-box gate"></div>L1 Gate</div>
+  <div class="leg"><div class="leg-box proc"></div>Processing Agent (T1)</div>
+  <div class="leg"><div class="leg-box spec"></div>Specialist Agent (T2)</div>
+  <div class="leg"><div class="leg-box hub"></div>Planner Hub</div>
+  <div class="leg"><div class="leg-box ctx"></div>Context Store</div>
+  <div class="leg"><div class="leg-box output"></div>Output Node</div>
+  <div class="leg"><div class="leg-box err"></div>Error Handler</div>
+  <div class="leg"><div class="leg-line bidir" style="height:2px"></div>Bidirectional</div>
+  <div class="leg"><div class="leg-line retry" style="height:2px;width:28px"></div>Retry Loop</div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- WIREFRAME CANVAS -->
+<!-- ════════════════════════════════════════ -->
+<div class="canvas">
+
+  <!-- ① ENTRY -->
+  <div class="ann">ENTRY POINT</div>
+  <div class="row" style="margin-bottom:6px">
+    <div class="block entry" style="min-width:260px">
+      <div class="num-badge">1</div>
+      <div class="b-label">User Query</div>
+      <div class="b-sub">plain language · dept · session_id · audit_log=[]</div>
+      <div class="b-dim">300 × 54</div>
+    </div>
+  </div>
+
+  <!-- Arrow down -->
+  <div class="col" style="margin:0 auto">
+    <div class="arr-down"><div class="arr-down-line"></div><div class="arr-down-tip">▼</div></div>
+  </div>
+
+  <!-- ② L1 GATE + DECOMPOSE -->
+  <div class="ann">GATE + NLP LAYER</div>
+  <div class="row" style="margin-bottom:4px;align-items:center">
+    <div class="block l1gate" style="min-width:195px">
+      <div class="num-badge">2</div>
+      <div class="b-label">L1 Intent Classifier</div>
+      <div class="b-sub">regex → keywords → LLM fallback</div>
+      <div class="b-dim">195 × 52</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--ink2);font-size:13px;padding:0 4px;flex-shrink:0">→</div>
+    <div class="block entry" style="min-width:235px">
+      <div class="num-badge">3</div>
+      <div class="b-label">NL Query Agent</div>
+      <div class="b-sub">SpaCy NER · SLM paraphrase · asyncio.gather()</div>
+      <div class="b-dim">235 × 52</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;margin-left:4px">
+      <div class="arr-label invalid">Invalid → Error</div>
+    </div>
+  </div>
+
+  <div class="col" style="margin:0 auto">
+    <div class="arr-down"><div class="arr-down-line"></div>
+    <div class="arr-label valid" style="margin:2px 0">Valid</div>
+    <div class="arr-down-tip">▼</div></div>
+  </div>
+
+  <!-- ═══════ TIER 1 — PROCESSING AGENTS ═══════ -->
+  <div class="tier-label">TIER 1 — PROCESSING AGENTS</div>
+  <div class="row" style="margin-bottom:2px">
+    <div class="block proc" style="min-width:150px;flex:1;max-width:210px">
+      <div class="num-badge">4</div>
+      <div class="b-label">NL Query<br>Agent</div>
+      <div class="b-sub">Parse intent · disambiguate · classify source</div>
+      <div class="b-dim">[ W:160 ]</div>
+    </div>
+    <div class="block proc" style="min-width:150px;flex:1;max-width:210px">
+      <div class="num-badge">5</div>
+      <div class="b-label">SQL Generator<br>Agent</div>
+      <div class="b-sub">Text→SQL · AST guard · schema fetch</div>
+      <div class="b-dim">[ W:160 ]</div>
+    </div>
+    <div class="block proc" style="min-width:150px;flex:1;max-width:210px">
+      <div class="num-badge">6</div>
+      <div class="b-label">Data Retrieval<br>Agent</div>
+      <div class="b-sub">Execute SQL/NoSQL · MCP connectors · pool</div>
+      <div class="b-dim">[ W:160 ]</div>
+    </div>
+    <div class="block proc" style="min-width:150px;flex:1;max-width:210px">
+      <div class="num-badge">7</div>
+      <div class="b-label">Insight Synthesis<br>Agent</div>
+      <div class="b-sub">Stream output · RBI domain language · cite</div>
+      <div class="b-dim">[ W:160 ]</div>
+    </div>
+  </div>
+
+  <!-- BIDIR ARROWS — T1 to Planner -->
+  <div class="row" style="margin:0">
+    <div class="bidir-col" style="flex:1;max-width:210px;min-width:150px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <div class="bidir-col" style="flex:1;max-width:210px;min-width:150px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <div class="bidir-col" style="flex:1;max-width:210px;min-width:150px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <div class="bidir-col" style="flex:1;max-width:210px;min-width:150px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+  </div>
+
+  <!-- ═══════ PLANNER HUB ═══════ -->
+  <div class="ann">ORCHESTRATION HUB</div>
+  <div class="hub-block" style="margin:0 0 2px">
+    <div class="retry-tag">↻ Retry &amp; Continuous Feedback</div>
+    <div class="b-label">Planner (Orchestration) Agent</div>
+    <div class="b-sub">plan_cache · DAG · dept_access · long-term memory · 0–200ms</div>
+    <div class="b-sub" style="margin-top:4px;color:#a090e0">
+      reads: sources · query_type · decomposition · dept &nbsp;|&nbsp;
+      writes: execution_plan
+    </div>
+  </div>
+
+  <!-- BIDIR ARROWS — Planner to T2 -->
+  <div class="row" style="margin:0">
+    <div class="bidir-col" style="flex:1;max-width:175px;min-width:130px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <div class="bidir-col" style="flex:1;max-width:175px;min-width:130px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <div class="bidir-col" style="flex:1;max-width:175px;min-width:130px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <div class="bidir-col" style="flex:1;max-width:175px;min-width:130px">
+      <div class="bd-arrow-up">▲</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-retry">↻</div>
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+    <!-- Context arrow -->
+    <div class="bidir-col" style="min-width:100px;max-width:115px">
+      <div class="bd-shaft"></div>
+      <div class="bd-arrow-dn">▼</div>
+    </div>
+  </div>
+
+  <!-- ═══════ TIER 2 — SPECIALIST AGENTS + CONTEXT ═══════ -->
+  <div class="tier-label">TIER 2 — SPECIALIST AGENTS + CONTEXT STORE</div>
+  <div class="row" style="margin-bottom:6px;align-items:flex-end">
+    <div class="block spec" style="min-width:130px;flex:1;max-width:175px">
+      <div class="num-badge">8</div>
+      <div class="b-label">Query Planning<br>Agent</div>
+      <div class="b-sub">Source routing · SQL/NoSQL/Vector · parallel plan</div>
+      <div class="b-dim">[ W:155 ]</div>
+    </div>
+    <div class="block spec" style="min-width:130px;flex:1;max-width:175px">
+      <div class="num-badge">9</div>
+      <div class="b-label">Document Search<br>Agent</div>
+      <div class="b-sub">BM25 + dense · BAAI/bge-m3 · OCR cache</div>
+      <div class="b-dim">[ W:155 ]</div>
+    </div>
+    <div class="block spec" style="min-width:130px;flex:1;max-width:175px">
+      <div class="num-badge">10</div>
+      <div class="b-label">Data Fusion<br>Agent</div>
+      <div class="b-sub">Join on bank_id · provenance tags · session mem</div>
+      <div class="b-dim">[ W:155 ]</div>
+    </div>
+    <div class="block spec" style="min-width:130px;flex:1;max-width:175px">
+      <div class="num-badge">11</div>
+      <div class="b-label">Visualization<br>Agent</div>
+      <div class="b-sub">Chart.js spec · client-side · RBI palette</div>
+      <div class="b-dim">[ W:155 ]</div>
+    </div>
+    <div class="ctx-block">
+      <div class="b-label">Context</div>
+      <div class="b-sub">Redis · Session<br>Long-term mem</div>
+    </div>
+  </div>
+
+  <!-- ═══════ VALIDATOR + ERROR SPLIT ═══════ -->
+  <div class="col" style="margin:0 auto">
+    <div class="arr-down"><div class="arr-down-line"></div><div class="arr-down-tip">▼</div></div>
+  </div>
+
+  <div class="ann">QUALITY GATE</div>
+  <div class="row" style="margin-bottom:6px;align-items:center;gap:14px;flex-wrap:nowrap">
+
+    <div class="block valid" style="flex:1;min-width:230px;max-width:380px">
+      <div class="num-badge">12</div>
+      <div class="b-label">Validator Node</div>
+      <div class="b-sub">7 rule checks · PASS / LOW_CONF / FAIL · parallel w/ Insight Synthesis</div>
+      <div class="b-dim">[ H:60 ]</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+      <div class="arr-label fail">FAIL ▶</div>
+      <div style="font-size:10px;color:var(--muted)">or</div>
+      <div class="arr-label invalid">Invalid ▶</div>
+    </div>
+
+    <div class="block err" style="min-width:165px;max-width:200px">
+      <div class="num-badge" style="background:#c06050">⊗</div>
+      <div class="b-label">Error Handler Node</div>
+      <div class="b-sub">L1 invalid · FAIL · Timeout · Access violation → END</div>
+      <div class="b-dim">[ W:180 ]</div>
+    </div>
+
+  </div>
+
+  <!-- Route labels -->
+  <div style="display:flex;justify-content:flex-start;padding-left:60px;gap:10px;margin-bottom:2px;flex-wrap:wrap">
+    <span class="arr-label pass">PASS ▼</span>
+    <span class="arr-label lc">LOW_CONF + disclaimer ▼</span>
+  </div>
+
+  <div class="col" style="margin:0 auto">
+    <div class="arr-down"><div class="arr-down-line"></div><div class="arr-down-tip">▼</div></div>
+  </div>
+
+  <!-- ═══════ OUTPUT LAYER ═══════ -->
+  <div class="ann">OUTPUT LAYER</div>
+  <div class="row" style="margin-bottom:6px">
+    <div class="block output" style="flex:1;min-width:200px;max-width:320px">
+      <div class="num-badge">13</div>
+      <div class="b-label">Final Response</div>
+      <div class="b-sub">Streamed SSE · confidence badge · citations · follow-up suggestion</div>
+      <div class="b-dim">[ H:56 ]</div>
+    </div>
+    <div class="block audit" style="flex:1;min-width:200px;max-width:320px">
+      <div class="num-badge">14</div>
+      <div class="b-label">Audit Logger Node</div>
+      <div class="b-sub">Immutable Postgres · data lineage · async non-blocking</div>
+      <div class="b-dim">[ H:56 ]</div>
+    </div>
+  </div>
+
+  <!-- EXIT -->
+  <div class="col" style="margin:0 auto">
+    <div class="arr-down"><div class="arr-down-line"></div><div class="arr-down-tip">▼</div></div>
+  </div>
+  <div class="ann">END · RBI OFFICER UI</div>
+  <div class="row">
+    <div class="block final" style="min-width:220px">
+      <div class="b-label">END</div>
+      <div class="b-sub">FastAPI response · SSE stream · dept-scoped</div>
+    </div>
+  </div>
+
+</div><!-- /canvas -->
+
+
+<!-- STATE SCHEMA -->
+<div class="section-divider">RBIState TypedDict — Shared State Schema</div>
+<div class="state-grid">
+  <div class="state-field"><span class="sf-name">query</span><span class="sf-type">str</span></div>
+  <div class="state-field"><span class="sf-name">dept</span><span class="sf-type">str</span></div>
+  <div class="state-field"><span class="sf-name">session_id</span><span class="sf-type">str</span></div>
+  <div class="state-field"><span class="sf-name">is_valid</span><span class="sf-type">bool</span></div>
+  <div class="state-field"><span class="sf-name">invalid_reason</span><span class="sf-type">str | None</span></div>
+  <div class="state-field"><span class="sf-name">decomposition</span><span class="sf-type">dict</span></div>
+  <div class="state-field"><span class="sf-name">paraphrases</span><span class="sf-type">list[str]</span></div>
+  <div class="state-field"><span class="sf-name">sources</span><span class="sf-type">list[str]</span></div>
+  <div class="state-field"><span class="sf-name">query_type</span><span class="sf-type">str</span></div>
+  <div class="state-field"><span class="sf-name">execution_plan</span><span class="sf-type">list[str]</span></div>
+  <div class="state-field"><span class="sf-name">retry_count</span><span class="sf-type">dict[str,int]</span></div>
+  <div class="state-field"><span class="sf-name">sql_result</span><span class="sf-type">dict | None</span></div>
+  <div class="state-field"><span class="sf-name">nosql_result</span><span class="sf-type">dict | None</span></div>
+  <div class="state-field"><span class="sf-name">vector_result</span><span class="sf-type">dict | None</span></div>
+  <div class="state-field"><span class="sf-name">joined_result</span><span class="sf-type">dict | None</span></div>
+  <div class="state-field"><span class="sf-name">validation_status</span><span class="sf-type">str</span></div>
+  <div class="state-field"><span class="sf-name">confidence</span><span class="sf-type">float</span></div>
+  <div class="state-field"><span class="sf-name">viz_spec</span><span class="sf-type">dict | None</span></div>
+  <div class="state-field"><span class="sf-name">final_response</span><span class="sf-type">str</span></div>
+  <div class="state-field"><span class="sf-name">audit_log</span><span class="sf-type">list[dict]</span></div>
+  <div class="state-field"><span class="sf-name">error</span><span class="sf-type">str | None</span></div>
+</div>
+
+<!-- NODE CALLOUT STRIP -->
+<div class="callout-strip" style="margin-top:28px">
+  <div class="cs-label">Node Count</div>
+  <span class="cs-item">14 total nodes</span>
+  <span class="cs-item">3 conditional edges</span>
+  <span class="cs-item">4 Tier-1 agents</span>
+  <span class="cs-item">4 Tier-2 agents</span>
+  <span class="cs-item">1 planner hub</span>
+  <span class="cs-item">1 context store</span>
+  <span class="cs-item">retry_count per agent</span>
+  <span class="cs-item">~860ms typical latency</span>
+</div>
+
+<!-- NODE SEQUENCE TABLE -->
+<div class="section-divider" style="margin-top:36px">Node Execution Sequence</div>
+<table style="width:100%;border-collapse:collapse;font-size:11px;background:var(--paper);border:1px solid var(--border)">
+  <thead>
+    <tr style="background:var(--shade)">
+      <th style="padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border)">#</th>
+      <th style="padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border)">Node Name</th>
+      <th style="padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border)">Type</th>
+      <th style="padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border)">Reads State</th>
+      <th style="padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border)">Writes State</th>
+      <th style="padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border)">Latency</th>
+    </tr>
+  </thead>
+  <tbody id="nodeTable"></tbody>
+</table>
+
+</div><!-- /page -->
+
+<script>
+const nodes = [
+  ["1","user_query (START)","Node","—","query, dept, session_id, audit_log=[]","0ms"],
+  ["2","l1_intent_classifier","Gate Node","query, dept","is_valid, invalid_reason","2–5ms"],
+  ["3","nl_query_agent","Agent Node","query, dept","decomposition, paraphrases","200ms"],
+  ["◇","route_l1","Cond Edge","is_valid","→ planner | → error","0ms"],
+  ["4","planner_agent","Agent Hub","sources, query_type, decomposition, dept","execution_plan, retry_count{}","0–200ms"],
+  ["◇","route_sources","Cond Edge","sources","→ query_planning | → data_retrieval | → document_search","0ms"],
+  ["5","nl_query_agent (T1)","Tier-1 Agent","decomposition, dept","decomposition enriched","50ms"],
+  ["6","sql_generator_agent","Tier-1 Agent","decomposition, schema_meta, dept","sql_query, sql_result","250ms"],
+  ["7","data_retrieval_agent","Tier-1 Agent","sql_query, nosql_query, dept","sql_result, nosql_result","200ms"],
+  ["8","insight_synthesis_agent","Tier-1 Agent","joined_result, confidence, viz_spec","final_response (stream)","200ms"],
+  ["9","query_planning_agent","Tier-2 Agent","sources, decomposition","execution_plan (detailed)","30ms"],
+  ["10","document_search_agent","Tier-2 Agent","paraphrases, dept, decomposition","vector_result","30ms"],
+  ["11","data_fusion_agent","Tier-2 Agent","sql_result, nosql_result, vector_result","joined_result","20ms"],
+  ["12","visualization_agent","Tier-2 Agent","joined_result, query_type","viz_spec","5ms"],
+  ["13","validator_node","Node · Parallel","all results, dept","validation_status, confidence","10ms"],
+  ["◇","route_validator","Cond Edge","validation_status","→ insight_synthesis | → error","0ms"],
+  ["14","audit_logger","Node · Async","full state","audit_log (append, immutable)","non-blocking"],
+  ["⊗","error_handler","Terminal","error, invalid_reason","final_response (error msg)","5ms"],
+];
+
+const tbody = document.getElementById('nodeTable');
+nodes.forEach(([n,name,type,reads,writes,lat]) => {
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #c8ccd8';
+  tr.innerHTML = `
+    <td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7f98">${n}</td>
+    <td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#2d3248;font-weight:500">${name}</td>
+    <td style="padding:7px 12px;font-size:10px;color:#7a7f98">${type}</td>
+    <td style="padding:7px 12px;font-size:10px;color:#7a7f98;font-family:'JetBrains Mono',monospace">${reads}</td>
+    <td style="padding:7px 12px;font-size:10px;color:#2d6048;font-family:'JetBrains Mono',monospace">${writes}</td>
+    <td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#805028">${lat}</td>
+  `;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
