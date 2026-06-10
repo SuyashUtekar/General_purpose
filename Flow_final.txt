@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRISHTI — AI Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:     #0D1B3E;
+    --navy-mid: #1A2F5E;
+    --amber:    #E8961A;
+    --amber-lt: #FAC45A;
+    --slate:    #F0F4FA;
+    --white:    #FFFFFF;
+    --muted:    #6B7A99;
+    --card:     #FFFFFF;
+    --border:   #DDE3EF;
+    --green:    #1A8A5A;
+    --red:      #C0392B;
+    --teal:     #1A6B8A;
+  }
+
+  html { scroll-snap-type: y mandatory; overflow-y: scroll; font-size: 16px; }
+
+  body { font-family: 'Inter', sans-serif; background: var(--slate); color: var(--navy); }
+
+  /* ── Slide shell ── */
+  .slide {
+    scroll-snap-align: start;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Slide variants ── */
+  .slide-hero    { background: var(--navy); color: var(--white); }
+  .slide-light   { background: var(--white); }
+  .slide-slate   { background: var(--slate); }
+  .slide-accent  { background: linear-gradient(135deg, #0D1B3E 0%, #1A3A6E 100%); color: var(--white); }
+  .slide-warm    { background: linear-gradient(135deg, #FFF8ED 0%, #FFF0D4 100%); }
+
+  /* ── Slide number badge ── */
+  .slide-num {
+    position: absolute; top: 32px; right: 48px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  .slide-hero .slide-num, .slide-accent .slide-num { color: rgba(255,255,255,0.35); }
+
+  /* ── Eyebrow labels ── */
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber);
+    margin-bottom: 16px;
+  }
+  .slide-accent .eyebrow { color: var(--amber-lt); }
+
+  /* ── Headings ── */
+  h1.display {
+    font-family: 'Playfair Display', serif; font-size: clamp(40px, 5vw, 64px);
+    font-weight: 900; line-height: 1.05; letter-spacing: -0.02em;
+    color: var(--white);
+  }
+  h2.section-title {
+    font-family: 'Playfair Display', serif; font-size: clamp(28px, 3.5vw, 44px);
+    font-weight: 700; line-height: 1.15; letter-spacing: -0.01em;
+    color: var(--navy);
+  }
+  .slide-accent h2.section-title { color: var(--white); }
+  h3.card-title {
+    font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 700;
+    color: var(--navy); margin-bottom: 8px;
+  }
+
+  /* ── Body text ── */
+  p.lead { font-size: 18px; line-height: 1.65; color: rgba(255,255,255,0.78); max-width: 640px; }
+  p.body { font-size: 15px; line-height: 1.7; color: #3D4F6E; }
+  p.body-white { font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.82); }
+
+  /* ── Amber underline for section titles ── */
+  .title-accent { position: relative; display: inline-block; }
+  .title-accent::after {
+    content: ''; position: absolute; left: 0; bottom: -6px;
+    height: 3px; width: 60%; background: var(--amber); border-radius: 2px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 28px;
+    box-shadow: 0 2px 12px rgba(13,27,62,0.06);
+  }
+  .card-amber { border-top: 3px solid var(--amber); }
+  .card-navy  { border-top: 3px solid var(--navy); }
+  .card-teal  { border-top: 3px solid var(--teal); }
+  .card-green { border-top: 3px solid var(--green); }
+
+  /* ── Grid helpers ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+
+  /* ── Problem blocks ── */
+  .problem-block {
+    display: flex; gap: 20px; align-items: flex-start;
+    background: var(--white); border-radius: 12px; padding: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 10px rgba(13,27,62,0.05);
+  }
+  .problem-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  /* ── Flow diagram ── */
+  .flow-wrap { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .flow-node {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 10px 22px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+    color: var(--navy); text-align: center;
+    box-shadow: 0 2px 8px rgba(13,27,62,0.07);
+  }
+  .flow-node.input-node {
+    background: #EDF2FF; border: 1.5px dashed #4A6FD4; color: #1A3A8A;
+  }
+  .flow-node.output-node {
+    background: #EDF7F0; border: 1.5px solid #1A8A5A; color: #1A5A3A;
+  }
+  .flow-node.llm-node {
+    background: linear-gradient(135deg, #0D1B3E, #1A3A6E); color: white;
+    border: none; box-shadow: 0 4px 16px rgba(13,27,62,0.3);
+  }
+  .flow-node.guard-node {
+    background: #FFF3E0; border: 1.5px solid #E8961A; color: #7A4A00;
+  }
+  .flow-arrow {
+    width: 2px; height: 20px; background: var(--muted);
+    position: relative; margin: 0 auto;
+  }
+  .flow-arrow::after {
+    content: '▼'; position: absolute; bottom: -8px; left: 50%;
+    transform: translateX(-50%); color: var(--muted); font-size: 10px;
+  }
+  .flow-row { display: flex; align-items: center; gap: 12px; }
+  .flow-row-arrow {
+    width: 28px; height: 2px; background: var(--muted); position: relative;
+  }
+  .flow-row-arrow::after {
+    content: '▶'; position: absolute; right: -8px; top: 50%;
+    transform: translateY(-50%); color: var(--muted); font-size: 10px;
+  }
+
+  /* ── Tool card ── */
+  .tool-card {
+    background: var(--white); border-radius: 10px; padding: 18px 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(13,27,62,0.05);
+  }
+  .tool-tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .tag-amber { background: #FFF3D4; color: #7A4A00; }
+  .tag-navy  { background: #E8EEFF; color: #1A2F6E; }
+  .tag-teal  { background: #E0F4FF; color: #0A4A6E; }
+  .tag-green { background: #E8F7EE; color: #1A5A3A; }
+  .tag-red   { background: #FFE8E8; color: #7A1A1A; }
+
+  /* ── Impact metric card ── */
+  .metric-card {
+    background: var(--white); border-radius: 12px; padding: 22px 24px;
+    border: 1px solid var(--border); text-align: center;
+    box-shadow: 0 2px 10px rgba(13,27,62,0.06);
+  }
+  .metric-num {
+    font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700;
+    color: var(--navy); line-height: 1;
+  }
+  .metric-num.amber { color: var(--amber); }
+  .metric-label { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  /* ── Agent pipeline diagram ── */
+  .pipeline {
+    display: flex; align-items: center; gap: 0;
+    background: var(--white); border-radius: 14px; padding: 20px 24px;
+    border: 1px solid var(--border); flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(13,27,62,0.07);
+  }
+  .pipe-step {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: 12px 16px; border-radius: 8px; min-width: 120px;
+    border: 1.5px solid var(--border); background: #F7F9FF;
+  }
+  .pipe-icon { font-size: 22px; margin-bottom: 6px; }
+  .pipe-name {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    color: var(--navy); line-height: 1.3;
+  }
+  .pipe-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .pipe-arrow {
+    font-size: 18px; color: var(--amber); padding: 0 6px; font-weight: bold;
+  }
+  .pipe-step.highlight {
+    background: linear-gradient(135deg, #0D1B3E, #1A3A6E);
+    border-color: #1A3A6E; color: white;
+  }
+  .pipe-step.highlight .pipe-name { color: white; }
+  .pipe-step.highlight .pipe-sub  { color: rgba(255,255,255,0.65); }
+
+  /* ── Architecture boxes ── */
+  .arch-agent {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 16px;
+    position: relative;
+  }
+  .arch-agent-label {
+    position: absolute; top: -11px; left: 16px;
+    background: var(--white); padding: 0 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    color: var(--amber); text-transform: uppercase; letter-spacing: 0.1em;
+  }
+
+  /* ── Separator ── */
+  .rule { height: 1px; background: var(--border); margin: 28px 0; }
+  .rule-amber { height: 2px; background: var(--amber); width: 48px; margin: 16px 0; }
+
+  /* ── Header strip on slides ── */
+  .slide-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 36px;
+  }
+  .slide-header-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: var(--amber); display: flex; align-items: center;
+    justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+
+  /* ── Hero accent bar ── */
+  .hero-bar {
+    width: 72px; height: 4px; background: var(--amber); border-radius: 2px;
+    margin: 28px 0 32px;
+  }
+
+  /* ── Tag list ── */
+  .tag-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .tag-pill {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 4px 10px; border-radius: 20px; font-weight: 600;
+    background: #EDF2FF; color: #1A3A8A; border: 1px solid #C5D3FF;
+  }
+
+  /* ── UI screenshot embed ── */
+  .ui-embed {
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(13,27,62,0.18);
+    border: 1px solid var(--border);
+    max-width: 100%; display: block;
+  }
+
+  /* ── Adaptability grid ── */
+  .adapt-card {
+    background: var(--white); border-radius: 12px; padding: 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--amber);
+  }
+  .adapt-icon { font-size: 28px; margin-bottom: 10px; }
+  .adapt-title { font-weight: 700; font-size: 15px; color: var(--navy); margin-bottom: 6px; }
+  .adapt-body  { font-size: 13px; color: #4A5A78; line-height: 1.6; }
+
+  /* ── Memory section ── */
+  .mem-block {
+    background: var(--white); border-radius: 10px; padding: 18px 20px;
+    border: 1px solid var(--border);
+  }
+  .mem-type {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;
+    color: var(--amber); margin-bottom: 8px;
+  }
+
+  /* ── Scroll hint ── */
+  .scroll-hint {
+    position: fixed; bottom: 28px; right: 36px; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    opacity: 0.6;
+  }
+  .scroll-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--amber);
+    animation: bounce 1.6s infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .slide { padding: 40px 32px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipe-arrow { transform: rotate(90deg); }
+  }
+
+  /* ── Table ── */
+  table.impact-table {
+    width: 100%; border-collapse: collapse; font-size: 14px;
+  }
+  table.impact-table th {
+    background: var(--navy); color: white; padding: 11px 16px;
+    text-align: left; font-weight: 600; font-size: 13px;
+  }
+  table.impact-table td {
+    padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+  table.impact-table tr:nth-child(even) td { background: var(--slate); }
+
+  /* ── Inline highlight ── */
+  .hl { color: var(--amber); font-weight: 700; }
+  .hl-navy { color: var(--navy); font-weight: 700; }
+
+  /* slide-in animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .slide > * { animation: fadeUp 0.5s ease both; }
+
+</style>
+</head>
+<body>
+
+<div class="scroll-hint">
+  <div class="scroll-dot"></div>
+  SCROLL
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 0 — HERO
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-hero">
+  <div class="slide-num">00 / INTRO</div>
+
+  <div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
+    <div style="background:var(--amber); border-radius:10px; padding:10px 16px;">
+      <span style="font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:var(--navy);">DRISHTI</span>
+    </div>
+    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(255,255,255,0.45); letter-spacing:0.15em;">RBI AI-OPS INITIATIVE</span>
+  </div>
+
+  <h1 class="display" style="max-width:780px; line-height:1.08;">
+    Data Retrieval and<br>
+    <span style="color:var(--amber);">Intelligent Supervisory</span><br>
+    Thinking Interface
+  </h1>
+
+  <div class="hero-bar"></div>
+
+  <p class="lead" style="max-width:620px;">
+    An agentic AI system enabling RBI officials to query databases,
+    interact with live dashboards, retrieve multi-source documents,
+    and generate dynamic visualisations — all through natural language.
+  </p>
+
+  <div style="margin-top:48px; display:flex; gap:32px; flex-wrap:wrap;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); letter-spacing:0.12em;">DOMAIN</div>
+      <div style="color:white; font-size:15px; margin-top:4px;">RBI / ReBIT — Banking Supervision</div>
+    </div>
+    <div style="width:1px; background:rgba(255,255,255,0.12);"></div>
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); letter-spacing:0.12em;">TYPE</div>
+      <div style="color:white; font-size:15px; margin-top:4px;">Agentic AI — Multi-Tool, Multi-Agent</div>
+    </div>
+    <div style="width:1px; background:rgba(255,255,255,0.12);"></div>
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); letter-spacing:0.12em;">INTERFACE</div>
+      <div style="color:white; font-size:15px; margin-top:4px;">Natural Language → Action</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 1 — PROBLEM STATEMENT
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-slate">
+  <div class="slide-num">01 / PROBLEM</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">⚡</div>
+    <div>
+      <div class="eyebrow">Problem Statement</div>
+      <h2 class="section-title"><span class="title-accent">What Is Broken Today</span></h2>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:18px; max-width:960px;">
+
+    <div class="problem-block">
+      <div class="problem-icon" style="background:#FFF3E0;">🗄️</div>
+      <div>
+        <h3 class="card-title">Rigid Database Access</h3>
+        <p class="body">
+          Complex database structures and rigid query formats severely limit accessibility for non-technical officials.
+          Data retrieval is bottlenecked by the need for SQL expertise, creating hard dependencies on technical teams
+          and slowing down time-critical supervisory decisions.
+        </p>
+        <div class="tag-list" style="margin-top:10px;">
+          <span class="tag-pill">SQL Expertise Required</span>
+          <span class="tag-pill">Slow Turnaround</span>
+          <span class="tag-pill">Limited Self-Service</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="problem-block">
+      <div class="problem-icon" style="background:#E8F4FF;">📊</div>
+      <div>
+        <h3 class="card-title">Static, Developer-Dependent Dashboards</h3>
+        <p class="body">
+          Liquidity monitoring demands manual sifting through vast financial datasets. Existing dashboards are static —
+          any modification requires developer communication, introducing delays. A change in database schema can
+          trigger a complete system overhaul, creating fragile infrastructure.
+        </p>
+        <div class="tag-list" style="margin-top:10px;">
+          <span class="tag-pill">Manual Analysis</span>
+          <span class="tag-pill">Developer Dependency</span>
+          <span class="tag-pill">Brittle on Schema Changes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="problem-block">
+      <div class="problem-icon" style="background:#F0FFF4;">📋</div>
+      <div>
+        <h3 class="card-title">Multi-Source Fragmentation &amp; Human Error</h3>
+        <p class="body">
+          When relevant information spans multiple sources — regulatory circulars, operational databases, compliance
+          documents — officials must conduct manual cross-lookups, increasing cognitive load and the probability
+          of oversight or error in high-stakes supervisory functions.
+        </p>
+        <div class="tag-list" style="margin-top:10px;">
+          <span class="tag-pill">Manual Cross-Lookup</span>
+          <span class="tag-pill">High Error Risk</span>
+          <span class="tag-pill">Siloed Information</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 2 — PROJECT NAME
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-accent">
+  <div class="slide-num">02 / PROJECT</div>
+
+  <div class="eyebrow">Introducing</div>
+
+  <div style="margin-bottom:8px;">
+    <span style="font-family:'Playfair Display',serif; font-size:clamp(64px,9vw,120px); font-weight:900; letter-spacing:-0.03em; line-height:1; color:var(--white);">DRISHTI</span>
+  </div>
+
+  <div style="font-family:'JetBrains Mono',monospace; font-size:clamp(12px,1.6vw,16px); color:var(--amber-lt); letter-spacing:0.18em; margin-bottom:32px; line-height:1.8;">
+    D&thinsp;A&thinsp;T&thinsp;A &nbsp; R&thinsp;E&thinsp;T&thinsp;R&thinsp;I&thinsp;E&thinsp;V&thinsp;A&thinsp;L &nbsp; A&thinsp;N&thinsp;D &nbsp; I&thinsp;N&thinsp;T&thinsp;E&thinsp;L&thinsp;L&thinsp;I&thinsp;G&thinsp;E&thinsp;N&thinsp;T &nbsp; S&thinsp;U&thinsp;P&thinsp;E&thinsp;R&thinsp;V&thinsp;I&thinsp;S&thinsp;O&thinsp;R&thinsp;Y &nbsp; T&thinsp;H&thinsp;I&thinsp;N&thinsp;K&thinsp;I&thinsp;N&thinsp;G &nbsp; I&thinsp;N&thinsp;T&thinsp;E&thinsp;R&thinsp;F&thinsp;A&thinsp;C&thinsp;E
+  </div>
+
+  <div class="rule" style="background:rgba(255,255,255,0.15); margin:0 0 32px;"></div>
+
+  <div class="grid-2" style="max-width:800px; gap:20px;">
+    <div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px 24px; border:1px solid rgba(255,255,255,0.12);">
+      <div style="font-size:28px; margin-bottom:10px;">🗣️</div>
+      <div style="font-weight:600; color:white; margin-bottom:6px;">Natural Language Interface</div>
+      <p class="body-white">Ask questions the way you think — no SQL, no rigid forms, no developer dependencies.</p>
+    </div>
+    <div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px 24px; border:1px solid rgba(255,255,255,0.12);">
+      <div style="font-size:28px; margin-bottom:10px;">🤖</div>
+      <div style="font-weight:600; color:white; margin-bottom:6px;">Agentic Multi-Tool Architecture</div>
+      <p class="body-white">Purpose-built agents that plan, execute, validate, and synthesise across systems autonomously.</p>
+    </div>
+    <div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px 24px; border:1px solid rgba(255,255,255,0.12);">
+      <div style="font-size:28px; margin-bottom:10px;">📈</div>
+      <div style="font-weight:600; color:white; margin-bottom:6px;">Dynamic Dashboards</div>
+      <p class="body-white">Visualisations generated on-demand from live data, shaped by your intent — not pre-defined templates.</p>
+    </div>
+    <div style="background:rgba(255,255,255,0.07); border-radius:12px; padding:20px 24px; border:1px solid rgba(255,255,255,0.12);">
+      <div style="font-size:28px; margin-bottom:10px;">🔍</div>
+      <div style="font-weight:600; color:white; margin-bottom:6px;">Multi-Source Retrieval</div>
+      <p class="body-white">Unified access across structured databases, NoSQL stores, and regulatory document corpora simultaneously.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 3 — HOW IT SOLVES (with UI screenshot)
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-light">
+  <div class="slide-num">03 / SOLUTION</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">✅</div>
+    <div>
+      <div class="eyebrow">Solution Overview</div>
+      <h2 class="section-title"><span class="title-accent">How DRISHTI Solves It</span></h2>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:36px; align-items:start;">
+    <div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+
+        <div class="card card-amber">
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:22px;">🗣️</div>
+            <div>
+              <h3 class="card-title">Natural Language Querying</h3>
+              <p class="body">Officials query both SQL and NoSQL databases in plain English. DRISHTI's NL-SQL and NL-NoSQL tools convert intent into safe, validated queries — no technical expertise needed.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-navy">
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:22px;">💬</div>
+            <div>
+              <h3 class="card-title">Chat with Dashboard</h3>
+              <p class="body">RBI officials interact with live operational data through conversation. The system understands context, identifies the right data sources, and presents structured visual outputs dynamically.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-teal">
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:22px;">📊</div>
+            <div>
+              <h3 class="card-title">Dynamic Dashboard Generation</h3>
+              <p class="body">No hardcoded charts. Dashboards are constructed on-demand from retrieved JSON data, matched to the user's analytical intent and rendered as interpretable visualisations.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-green">
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:22px;">📚</div>
+            <div>
+              <h3 class="card-title">Multi-Source Document Retrieval</h3>
+              <p class="body">Semantic search across regulatory circulars, master directions, and policy documents using embedding-based similarity — surfacing the right sections, summarised and validated.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- UI Screenshot -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase;">Live UI Preview</div>
+      <img src="/mnt/user-data/uploads/a5848987-f895-43e3-9f60-e8467d1e311e.jpg" 
+           alt="DRISHTI RBI AI-Ops Command Dashboard" class="ui-embed" 
+           style="max-height:480px; object-fit:cover; object-position:top;">
+      <div style="background:var(--slate); border-radius:8px; padding:12px 16px; border:1px solid var(--border);">
+        <div style="font-size:12px; color:var(--muted); line-height:1.6;">
+          <strong style="color:var(--navy);">RBI AI-Ops Command</strong> — Real-time supervision dashboard showing complaint trend analysis, AI intelligence insights, SLA compliance metrics, and zonal violation heatmaps with live anomaly detection.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 4A — WHY AGENTIC AI
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-slate">
+  <div class="slide-num">04A / AGENTIC FIT</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">🤖</div>
+    <div>
+      <div class="eyebrow">Agentic AI Engineering</div>
+      <h2 class="section-title"><span class="title-accent">Why This Problem Demands Agents</span></h2>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:20px; max-width:1000px;">
+
+    <div class="card card-amber">
+      <div class="tool-tag tag-amber">Volume of Interaction</div>
+      <h3 class="card-title">High-Frequency, Diverse Queries</h3>
+      <p class="body">RBI supervisory functions generate dozens of data requests daily — from liquidity monitoring to complaint resolution tracking — each with distinct intent, data sources, and output formats. A static system cannot scale to this variety.</p>
+    </div>
+
+    <div class="card card-navy">
+      <div class="tool-tag tag-navy">Systems Involved</div>
+      <h3 class="card-title">Heterogeneous Data Ecosystem</h3>
+      <p class="body">DRISHTI coordinates across SQL databases, NoSQL collections, vector document stores, and live dashboard APIs simultaneously. Multi-agent coordination is the only viable architecture for cross-system orchestration at this complexity.</p>
+    </div>
+
+    <div class="card card-teal">
+      <div class="tool-tag tag-teal">Ambiguity in Workflows</div>
+      <h3 class="card-title">Intent Classification &amp; Decomposition</h3>
+      <p class="body">User queries are inherently ambiguous: <em>"Show me exposure to stressed NBFCs"</em> requires source identification, query decomposition, retrieval, validation, and synthesis — all within a single interaction. Agents handle this non-deterministic flow.</p>
+    </div>
+
+    <div class="card card-green">
+      <div class="tool-tag tag-green">Reasoning Requirements</div>
+      <h3 class="card-title">Multi-Hop Reasoning Over Data</h3>
+      <p class="body">Answers often require chaining evidence: database result → document context → validation → summary. The Synthesiser Agent reasons across these heterogeneous outputs, a task requiring stateful multi-step reasoning beyond a single LLM call.</p>
+    </div>
+
+    <div class="card" style="border-top:3px solid #8B5CF6; grid-column: span 2;">
+      <div class="tool-tag" style="background:#F3E8FF; color:#5B21B6;">Actions by Agents</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px;">
+        <div style="flex:1; min-width:160px;">
+          <strong style="font-size:13px; color:var(--navy);">🧠 Intent Classifier</strong>
+          <p class="body" style="margin-top:4px; font-size:13px;">Classifies query intent and routes to the right planning path.</p>
+        </div>
+        <div style="flex:1; min-width:160px;">
+          <strong style="font-size:13px; color:var(--navy);">📋 Planner Agent</strong>
+          <p class="body" style="margin-top:4px; font-size:13px;">Decomposes queries, identifies sources, sequences tool calls.</p>
+        </div>
+        <div style="flex:1; min-width:160px;">
+          <strong style="font-size:13px; color:var(--navy);">⚙️ Executor Agent</strong>
+          <p class="body" style="margin-top:4px; font-size:13px;">Runs NL-SQL, NL-NoSQL, Retrieval, and Visualisation tools.</p>
+        </div>
+        <div style="flex:1; min-width:160px;">
+          <strong style="font-size:13px; color:var(--navy);">🔗 Synthesiser Agent</strong>
+          <p class="body" style="margin-top:4px; font-size:13px;">Joins results, validates, summarises, and formats final output.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 4B — IMPACT ASSESSMENT
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-light">
+  <div class="slide-num">04B / IMPACT</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">📈</div>
+    <div>
+      <div class="eyebrow">Impact Assessment</div>
+      <h2 class="section-title"><span class="title-accent">Value to RBI / ReBIT</span></h2>
+    </div>
+  </div>
+
+  <!-- Metrics row -->
+  <div class="grid-4" style="margin-bottom:28px;">
+    <div class="metric-card">
+      <div class="metric-num amber">↓70%</div>
+      <div class="metric-label">Reduction in<br>data access time</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num amber">0×</div>
+      <div class="metric-label">Developer dependency<br>for dashboard updates</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num amber">5+</div>
+      <div class="metric-label">Heterogeneous systems<br>unified in one interface</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num amber">↑</div>
+      <div class="metric-label">Accuracy via LLM<br>validation guardrails</div>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 12px rgba(13,27,62,0.06);">
+    <table class="impact-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Current State</th>
+          <th>With DRISHTI</th>
+          <th>Magnitude</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Time Saved</strong></td>
+          <td>Hours per query — manual SQL writing, developer tickets</td>
+          <td>Seconds to minutes — natural language, autonomous execution</td>
+          <td><span class="hl">High</span></td>
+        </tr>
+        <tr>
+          <td><strong>Practicality</strong></td>
+          <td>Requires technical intermediaries for every data need</td>
+          <td>Self-service for non-technical RBI officials immediately</td>
+          <td><span class="hl">Immediate</span></td>
+        </tr>
+        <tr>
+          <td><strong>Cost of Error</strong></td>
+          <td>Manual lookups prone to oversight in supervisory decisions</td>
+          <td>Validation tool + guardrails reduce misinterpretation risk</td>
+          <td><span class="hl">Critical</span></td>
+        </tr>
+        <tr>
+          <td><strong>Augmentation Level</strong></td>
+          <td>Humans do all retrieval, correlation, and formatting</td>
+          <td>AI handles retrieval, correlation, formatting — humans decide</td>
+          <td><span class="hl">Level 3</span></td>
+        </tr>
+        <tr>
+          <td><strong>Dashboard Agility</strong></td>
+          <td>Static, developer-gated, schema-brittle</td>
+          <td>Dynamic, user-driven, schema-adaptive visualisations</td>
+          <td><span class="hl">High</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 5 — ADAPTABILITY
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-warm">
+  <div class="slide-num">05 / ADAPTABILITY</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">🌐</div>
+    <div>
+      <div class="eyebrow">Beyond RBI</div>
+      <h2 class="section-title"><span class="title-accent">Adaptability in Other Contexts</span></h2>
+    </div>
+  </div>
+
+  <p class="body" style="max-width:700px; margin-bottom:28px; font-size:15px;">
+    DRISHTI's architecture is domain-agnostic. The multi-agent orchestration pattern, tool abstraction layer, and NL-to-query translation are fully portable. Any organisation with heterogeneous data sources and non-technical decision-makers is a natural fit.
+  </p>
+
+  <div class="grid-3" style="gap:18px;">
+
+    <div class="adapt-card">
+      <div class="adapt-icon">🏥</div>
+      <div class="adapt-title">Healthcare Supervision</div>
+      <div class="adapt-body">NABH or health ministries can use DRISHTI to query hospital compliance databases, retrieve policy documents, and visualise patient outcome metrics — replacing manual reporting cycles.</div>
+    </div>
+
+    <div class="adapt-card">
+      <div class="adapt-icon">⚖️</div>
+      <div class="adapt-title">Legal &amp; Compliance Analytics</div>
+      <div class="adapt-body">Law firms and regulatory bodies can chat with case databases, cross-reference statutes, and dynamically generate briefing dashboards without SQL or developer dependency.</div>
+    </div>
+
+    <div class="adapt-card">
+      <div class="adapt-icon">📦</div>
+      <div class="adapt-title">Supply Chain Intelligence</div>
+      <div class="adapt-body">Procurement teams can query inventory databases in natural language, retrieve supplier contracts, and generate dynamic risk dashboards adapting to live logistics data.</div>
+    </div>
+
+    <div class="adapt-card">
+      <div class="adapt-icon">🎓</div>
+      <div class="adapt-title">Education Policy Bodies</div>
+      <div class="adapt-body">Ministries can query student performance databases, retrieve circulars, and visualise institutional compliance metrics without reliance on technical data teams.</div>
+    </div>
+
+    <div class="adapt-card">
+      <div class="adapt-icon">🏙️</div>
+      <div class="adapt-title">Smart City Operations</div>
+      <div class="adapt-body">Municipal authorities can query IoT sensor databases, cross-reference urban policy documents, and visualise infrastructure health dashboards conversationally.</div>
+    </div>
+
+    <div class="adapt-card">
+      <div class="adapt-icon">🔬</div>
+      <div class="adapt-title">Research &amp; Intelligence Agencies</div>
+      <div class="adapt-body">Analysts can retrieve multi-source documents, run structured data queries, and get synthesised briefs — reducing the time between raw data and actionable intelligence.</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:24px; background:var(--white); border-radius:10px; padding:16px 20px; border-left:4px solid var(--navy); max-width:700px;">
+    <p class="body"><strong>Core Reusability:</strong> NL-SQL, NL-NoSQL, Document Search, Visualisation, and Validation tools require only domain-specific prompt tuning and schema/metadata updates — the agent orchestration layer requires no changes.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 6 — ENGINEERING PRINCIPLES
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-light">
+  <div class="slide-num">06A / ENGINEERING</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">⚙️</div>
+    <div>
+      <div class="eyebrow">Engineering Principles</div>
+      <h2 class="section-title"><span class="title-accent">Agentic Architecture</span></h2>
+    </div>
+  </div>
+
+  <!-- Chat with DB Architecture -->
+  <div style="margin-bottom:28px;">
+    <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:12px;">
+      ◈ Chat with DB — Agent Pipeline
+    </div>
+    <div style="background:var(--slate); border-radius:14px; padding:24px; border:1px solid var(--border);">
+      <!-- Top row: query flow -->
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+        <div class="flow-node input-node">User Query</div>
+        <div style="color:var(--amber); font-size:16px; padding:0 4px;">→</div>
+        <div class="flow-node">Intent Classifier</div>
+        <div style="color:var(--amber); font-size:16px; padding:0 4px;">→</div>
+        <div class="flow-node">Decomposer &amp; Paraphraser</div>
+      </div>
+      <!-- Three agent boxes -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; align-items:start;">
+        <!-- Planner Agent -->
+        <div class="arch-agent">
+          <div class="arch-agent-label">Planner Agent</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:8px;">
+            <div class="flow-node" style="width:100%; text-align:center;">Source Identifier</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node" style="width:100%; text-align:center;">Planning</div>
+          </div>
+        </div>
+        <!-- Executor Agent -->
+        <div class="arch-agent">
+          <div class="arch-agent-label">Executor Agent</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:8px;">
+            <div class="flow-node" style="width:100%; text-align:center; background:#FFF8E8; border-color:var(--amber);">Tools Execution</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node" style="width:100%; text-align:center;">Retrieval</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node guard-node" style="width:100%; text-align:center;">Validation Tool</div>
+          </div>
+        </div>
+        <!-- Synthesiser Agent -->
+        <div class="arch-agent">
+          <div class="arch-agent-label">Synthesiser Agent</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:8px;">
+            <div class="flow-node" style="width:100%; text-align:center;">Join Results</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node" style="width:100%; text-align:center;">Summarise</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:16px;">
+        <div style="display:inline-block; font-size:16px; color:var(--muted);">↓</div>
+        <div class="flow-node output-node" style="display:inline-block; margin-top:4px;">Final Output</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat with Dashboard Architecture -->
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--teal); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:12px;">
+      ◈ Chat with Dashboard — Agent Pipeline
+    </div>
+    <div style="background:var(--slate); border-radius:14px; padding:24px; border:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+        <div class="flow-node input-node">User Query</div>
+        <div style="color:var(--amber); font-size:16px; padding:0 4px;">→</div>
+        <div class="flow-node">Intent Classifier</div>
+        <div style="color:var(--amber); font-size:16px; padding:0 4px;">→</div>
+        <div class="flow-node">Decomposer &amp; Paraphraser</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
+        <div class="arch-agent">
+          <div class="arch-agent-label">Planner Agent</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:8px;">
+            <div class="flow-node" style="width:100%; text-align:center;">Source Identifier</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node" style="width:100%; text-align:center;">Planning</div>
+          </div>
+        </div>
+        <div class="arch-agent">
+          <div class="arch-agent-label">Executor Agent</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:8px;">
+            <div class="flow-node" style="width:100%; text-align:center; background:#FFF8E8; border-color:var(--amber);">Tools Execution</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node" style="width:100%; text-align:center;">Retrieval</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node guard-node" style="width:100%; text-align:center;">Validation</div>
+            <div style="color:var(--muted); font-size:16px;">↓</div>
+            <div class="flow-node" style="width:100%; text-align:center; background:#E0F4FF; border-color:var(--teal);">Visualisation Tool</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:16px;">
+        <div class="flow-node output-node" style="display:inline-block;">JSON Output → Dynamic Dashboard</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 6B — TOOLS SPECIFICATION
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-slate">
+  <div class="slide-num">06B / TOOLS</div>
+
+  <div class="slide-header">
+    <div class="slide-header-icon">🔧</div>
+    <div>
+      <div class="eyebrow">Engineering Principles</div>
+      <h2 class="section-title"><span class="title-accent">Tools Architecture</span></h2>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:16px; max-width:1060px;">
+
+    <!-- NL-SQL Tool -->
+    <div class="tool-card">
+      <div class="tool-tag tag-navy">NL-SQL Tool</div>
+      <h3 class="card-title">Natural Language → SQL</h3>
+      <div style="background:var(--slate); border-radius:8px; padding:10px 14px; margin:10px 0; border:1px dashed var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">INPUT</div>
+        <div style="font-size:13px; color:var(--navy); margin-top:3px;">Query + DDL + Table Metadata + Intent</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--navy);flex-shrink:0;"></div>
+          <span style="font-size:13px;">Prompt construction with schema context</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--navy);flex-shrink:0;"></div>
+          <span style="font-size:13px;">LLM generates candidate SQL</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0;"></div>
+          <span style="font-size:13px; color:var(--amber); font-weight:600;">Guardrails validation (safety + correctness)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+          <span style="font-size:13px; color:var(--green);">→ Executable SQL Query</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NL-NoSQL Tool -->
+    <div class="tool-card">
+      <div class="tool-tag tag-teal">NL-NoSQL Tool</div>
+      <h3 class="card-title">Natural Language → NoSQL Query</h3>
+      <div style="background:var(--slate); border-radius:8px; padding:10px 14px; margin:10px 0; border:1px dashed var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">INPUT</div>
+        <div style="font-size:13px; color:var(--navy); margin-top:3px;">Query + DDL + Collection Metadata + Intent</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;"></div>
+          <span style="font-size:13px;">Collection-aware prompt construction</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;"></div>
+          <span style="font-size:13px;">LLM generates NoSQL query (MongoDB/Elasticsearch)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0;"></div>
+          <span style="font-size:13px; color:var(--amber); font-weight:600;">Guardrails validation</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+          <span style="font-size:13px; color:var(--green);">→ Executable NoSQL Query</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retrieval Tool -->
+    <div class="tool-card">
+      <div class="tool-tag tag-amber">Retrieval Tool</div>
+      <h3 class="card-title">DB Execution &amp; JSON Return</h3>
+      <div style="background:var(--slate); border-radius:8px; padding:10px 14px; margin:10px 0; border:1px dashed var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">INPUT</div>
+        <div style="font-size:13px; color:var(--navy); margin-top:3px;">Tool Query + DB Credentials</div>
+      </div>
+      <p class="body" style="font-size:13px;">Executes validated query against the target database. Returns structured JSON output for downstream tool consumption (Visualisation, Summariser).</p>
+    </div>
+
+    <!-- Document Search Tool -->
+    <div class="tool-card">
+      <div class="tool-tag" style="background:#F3E8FF; color:#5B21B6;">Document Search Tool</div>
+      <h3 class="card-title">Semantic Document Retrieval</h3>
+      <div style="background:var(--slate); border-radius:8px; padding:10px 14px; margin:10px 0; border:1px dashed var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">INPUT</div>
+        <div style="font-size:13px; color:var(--navy); margin-top:3px;">Query + Intent</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:5px; font-size:13px;">
+        <span>Embeddings → Similarity Search on Doc Metadata</span>
+        <span>→ Top-K Doc Retrieval</span>
+        <span>→ User Query + Intent → Doc Embedding Similarity</span>
+        <span>→ LLM Summarisation → Validation</span>
+      </div>
+    </div>
+
+    <!-- Visualisation Tool -->
+    <div class="tool-card">
+      <div class="tool-tag tag-green">Visualisation Tool</div>
+      <h3 class="card-title">Intent-Driven Chart Generation</h3>
+      <div style="background:var(--slate); border-radius:8px; padding:10px 14px; margin:10px 0; border:1px dashed var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">INPUT</div>
+        <div style="font-size:13px; color:var(--navy); margin-top:3px;">JSON Data + Intent + Query</div>
+      </div>
+      <p class="body" style="font-size:13px;">LLM interprets JSON data and user intent to produce a JSON Visualisation output — chart type, axes, aggregation, and formatting determined by analytical context, not pre-defined templates.</p>
+    </div>
+
+    <!-- Validator Tool -->
+    <div class="tool-card">
+      <div class="tool-tag tag-red" style="background:#FFE8E8; color:#7A1A1A;">Validator Tool</div>
+      <h3 class="card-title">Output Validation &amp; Quality Gate</h3>
+      <div style="background:var(--slate); border-radius:8px; padding:10px 14px; margin:10px 0; border:1px dashed var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">INPUT</div>
+        <div style="font-size:13px; color:var(--navy); margin-top:3px;">Query + Intent + Tool Output</div>
+      </div>
+      <p class="body" style="font-size:13px;">LLM-powered validation checks that tool output is coherent with the original query intent. Acts as a quality gate before results are synthesised and returned to the user.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 6C — CONTEXT ENGINEERING + MEMORY + MCP
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-accent">
+  <div class="slide-num">06C / CONTEXT & MEMORY</div>
+
+  <div class="eyebrow">Engineering Principles</div>
+  <h2 class="section-title" style="color:white; margin-bottom:32px;"><span style="position:relative; display:inline-block;">Context Engineering, MCP &amp; Memory<span style="position:absolute; left:0; bottom:-6px; height:3px; width:60%; background:var(--amber); border-radius:2px;"></span></span></h2>
+
+  <div class="grid-3" style="gap:20px;">
+
+    <!-- Context Engineering -->
+    <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:22px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber-lt); margin-bottom:14px; letter-spacing:0.12em;">CONTEXT ENGINEERING</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">📌</span>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600; margin-bottom:3px;">Schema Context Injection</div>
+            <p class="body-white" style="font-size:13px;">DDL, table metadata, and collection schemas injected per tool call to ground LLM query generation in the actual data structure.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">🎯</span>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600; margin-bottom:3px;">Intent Propagation</div>
+            <p class="body-white" style="font-size:13px;">Classified intent travels through the full pipeline — from planner to executor to synthesiser — ensuring every step serves the original user goal.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">🔗</span>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600; margin-bottom:3px;">Tool Output Chaining</div>
+            <p class="body-white" style="font-size:13px;">Summarisation tool receives query + intent + retrieval output + validation output as combined context for coherent synthesis.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MCP -->
+    <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:22px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber-lt); margin-bottom:14px; letter-spacing:0.12em;">MCP — MODEL CONTEXT PROTOCOL</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">🔌</span>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600; margin-bottom:3px;">Tool-as-MCP-Server</div>
+            <p class="body-white" style="font-size:13px;">Each tool (NL-SQL, Retrieval, Document Search, Visualisation) is registered as an MCP server, enabling standardised invocation and extensibility.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">📡</span>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600; margin-bottom:3px;">Standardised I/O Protocol</div>
+            <p class="body-white" style="font-size:13px;">MCP ensures each agent-tool interaction has a consistent schema for inputs and outputs, enabling modular swap-out of tools without pipeline rewrites.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">⚡</span>
+          <div>
+            <div style="color:white; font-size:14px; font-weight:600; margin-bottom:3px;">Parallel Tool Execution</div>
+            <p class="body-white" style="font-size:13px;">Planner can dispatch multiple independent tool calls concurrently (e.g., SQL + document search simultaneously) via MCP orchestration.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory -->
+    <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:22px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber-lt); margin-bottom:14px; letter-spacing:0.12em;">MEMORY CONSIDERATIONS</div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; color:var(--amber-lt); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Short-Term Memory</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; border-left:3px solid var(--amber);">
+            <p class="body-white" style="font-size:12px;"><strong style="color:white;">Conversation Buffer:</strong> Full turn-by-turn dialogue maintained within session for multi-hop follow-up queries.</p>
+          </div>
+          <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; border-left:3px solid var(--amber);">
+            <p class="body-white" style="font-size:12px;"><strong style="color:white;">Tool State:</strong> Intermediate tool outputs cached in-session to avoid re-execution on follow-up questions.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px; font-weight:700; color:var(--amber-lt); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Long-Term Memory</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; border-left:3px solid #60A5FA;">
+            <p class="body-white" style="font-size:12px;"><strong style="color:white;">User Preference Store:</strong> Frequently-used schemas, preferred visualisation types, and query patterns stored per official role.</p>
+          </div>
+          <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:10px 12px; border-left:3px solid #60A5FA;">
+            <p class="body-white" style="font-size:12px;"><strong style="color:white;">Query History:</strong> Past validated queries stored as few-shot examples to improve NL-to-query generation quality over time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 7 — CLOSING
+═══════════════════════════════════════════════════ -->
+<section class="slide slide-hero" style="justify-content:center; align-items:center; text-align:center;">
+  <div class="slide-num">07 / CLOSE</div>
+
+  <div style="max-width:680px;">
+    <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(255,255,255,0.4); letter-spacing:0.2em; margin-bottom:20px; text-transform:uppercase;">Thank You</div>
+
+    <div style="font-family:'Playfair Display',serif; font-size:clamp(48px,7vw,88px); font-weight:900; line-height:1; color:var(--white); letter-spacing:-0.03em; margin-bottom:12px;">
+      DRISHTI
+    </div>
+
+    <div style="width:64px; height:3px; background:var(--amber); border-radius:2px; margin:20px auto 24px;"></div>
+
+    <p style="font-size:18px; color:rgba(255,255,255,0.7); line-height:1.6; margin-bottom:36px;">
+      Empowering RBI officials with the clarity of vision they need —<br>
+      through intelligence that <span style="color:var(--amber-lt); font-style:italic;">understands, retrieves, and shows.</span>
+    </p>
+
+    <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+      <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:14px 24px; text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--amber); letter-spacing:0.12em; margin-bottom:6px;">AGENTS</div>
+        <div style="color:white; font-size:15px; font-weight:600;">4 Specialised Agents</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:14px 24px; text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--amber); letter-spacing:0.12em; margin-bottom:6px;">TOOLS</div>
+        <div style="color:white; font-size:15px; font-weight:600;">6 Agentic Tools</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:14px 24px; text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--amber); letter-spacing:0.12em; margin-bottom:6px;">INTERFACE</div>
+        <div style="color:white; font-size:15px; font-weight:600;">Natural Language First</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:14px 24px; text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--amber); letter-spacing:0.12em; margin-bottom:6px;">PROTOCOL</div>
+        <div style="color:white; font-size:15px; font-weight:600;">MCP-Powered</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
